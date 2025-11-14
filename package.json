@@ -1,0 +1,18 @@
+{
+  "name": "inventario-electron",
+  "version": "1.0.0",
+  "description": "App de inventario local con Electron + SQLite",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^26.0.0",
+    "electron-rebuild": "^3.2.9"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1"
+  }
+}

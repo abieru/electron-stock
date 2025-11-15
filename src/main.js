@@ -4,17 +4,15 @@ const DB = require('./db');
 const fs = require("fs");
 
 // Base de datos (better-sqlite3: super rápido, sync)
-const db = new DB(path.join(__dirname, 'inventario.db'));
+const db = new DB(path.join(__dirname, '../resource', 'inventario.db'));
 
 let mainWindow;
 
-// ==============================================
-// Crear ventana principal
-// ==============================================
+
 function createWindow() {
 	mainWindow = new BrowserWindow({
-		width: 1000,
-		height: 700,
+		width: 1400,
+		height: 1000,
 		autoHideMenuBar: true,
 		webPreferences: {
 			preload: path.join(__dirname, 'preload.js'),
@@ -23,24 +21,19 @@ function createWindow() {
 		}
 	});
 
-	mainWindow.loadFile('index.html');
+	mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
-	// Solo abre DevTools en modo desarrollo
 	if (!app.isPackaged) {
-		mainWindow.webContents.openDevTools();
+		//mainWindow.webContents.openDevTools(); just for development
 	}
 
-	// Liberar referencia al cerrar
 	mainWindow.on('closed', () => {
 		mainWindow = null;
 	});
 }
 
-// ==============================================
-// APP READY
-// ==============================================
 app.whenReady().then(() => {
-	db.init();   // Crear tablas si no existen (rápido, síncrono)
+	db.init(); 
 	createWindow();
 
 	app.on('activate', () => {
@@ -48,18 +41,11 @@ app.whenReady().then(() => {
 	});
 });
 
-// ==============================================
-// SALIR (excepto en macOS)
-// ==============================================
 app.on('window-all-closed', () => {
 	if (process.platform !== 'darwin') {
 		app.quit();
 	}
 });
-
-// ==============================================
-// HANDLERS IPC OPTIMIZADOS
-// ==============================================
 
 ipcMain.handle("exportCSV", async () => {
   const items = db.getAllProducts();
@@ -76,7 +62,6 @@ ipcMain.handle("exportCSV", async () => {
 
   const csv = csvRows.join("\n");
 
-  // Dialogo para que el usuario elija dónde guardar
   const { filePath } = await dialog.showSaveDialog({
     title: "Salvar CSV",
     defaultPath: "productos.csv",

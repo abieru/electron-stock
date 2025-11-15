@@ -20,7 +20,7 @@
 	const btnCSV = $('#btn-get-csv');
 	const searchInput = $('#search-input');
 
-	let cachedProducts = []; // 🔥 cache local
+	let cachedProducts = [];
 
 	function escapeHtml(t) {
 		return String(t)
@@ -30,9 +30,6 @@
 			.replaceAll('"', "&quot;");
 	}
 
-	// --------------------------------------------------------------------------------
-	// RENDER SOLO TABLA
-	// --------------------------------------------------------------------------------
 	function renderProducts(products) {
 		const frag = document.createDocumentFragment();
 
@@ -42,7 +39,7 @@
 				<td>${escapeHtml(p.name)}</td>
 				<td>${p.quantity}</td>
 				<td>${p.min_quantity}</td>
-				<td><button class="btn btn-sm btn-outline-primary btn-edit" data-id="${p.id}">Editar</button></td>
+				<td><button class="btn btn-sm btn-outline-primary btn-edit" data-id="${p.id}"><i class="fa-solid fa-pen-to-square"></i> Editar</button></td>
 			`;
 			frag.appendChild(tr);
 		}
@@ -64,9 +61,6 @@
 		});
 	}
 
-	// --------------------------------------------------------------------------------
-	// CARGAR PRODUCTOS COMPLETOS (solo una vez o cuando se edita)
-	// --------------------------------------------------------------------------------
 	async function loadProducts() {
 		cachedProducts = await window.api.getProducts();
 
@@ -84,9 +78,6 @@
 		movementProduct.replaceChildren(frag);
 	}
 
-	// --------------------------------------------------------------------------------
-	// MOVIMIENTOS
-	// --------------------------------------------------------------------------------
 	async function loadMovements() {
 		const mv = await window.api.getMovements();
 
@@ -107,9 +98,6 @@
 		movementsList.replaceChildren(frag);
 	}
 
-	// --------------------------------------------------------------------------------
-	// LOW STOCK
-	// --------------------------------------------------------------------------------
 	async function loadLowStock() {
 		const low = await window.api.lowStock();
 		lowstockAlerts.innerHTML = "";
@@ -129,9 +117,6 @@
 		lowstockAlerts.appendChild(div);
 	}
 
-	// --------------------------------------------------------------------------------
-	// FORM PRODUCTO
-	// --------------------------------------------------------------------------------
 	productForm.addEventListener("submit", async (e) => {
 		e.preventDefault();
 
@@ -177,9 +162,6 @@
 		locationInput.value = "";
 	}
 
-	// --------------------------------------------------------------------------------
-	// MOVIMENTOS
-	// --------------------------------------------------------------------------------
 	movementForm.addEventListener("submit", async (e) => {
 		e.preventDefault();
 
@@ -203,9 +185,6 @@
 		await loadLowStock();
 	});
 
-	// --------------------------------------------------------------------------------
-	// BOTONES
-	// --------------------------------------------------------------------------------
 	btnRefresh.addEventListener("click", async () => {
 		await loadProducts();
 		await loadMovements();
@@ -217,9 +196,6 @@
 		if (result.ok) alert("CSV exportado correctamente!");
 	});
 
-	// --------------------------------------------------------------------------------
-	// BUSCADOR SUPER RÁPIDO
-	// --------------------------------------------------------------------------------
 	function debounce(fn, delay = 200) {
 		let timer;
 		return (...args) => {
@@ -246,9 +222,6 @@
 		}, 120)
 	);
 
-	// --------------------------------------------------------------------------------
-	// INICIO
-	// --------------------------------------------------------------------------------
 	await loadProducts();
 	await loadMovements();
 	await loadLowStock();

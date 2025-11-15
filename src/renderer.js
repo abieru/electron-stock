@@ -1,6 +1,6 @@
 (async function () {
+	console.log("Renderer cargado!");
 	const $ = (sel) => document.querySelector(sel);
-
 	// DOM
 	const productForm = $('#product-form');
 	const productId = $('#product-id');
@@ -19,6 +19,9 @@
 	const btnRefresh = $('#btn-refresh');
 	const btnCSV = $('#btn-get-csv');
 	const searchInput = $('#search-input');
+	let currentPage = 1;
+	const pageSize = 10;
+	let totalProducts = 0;
 
 	let cachedProducts = [];
 
@@ -61,28 +64,56 @@
 		});
 	}
 
-	async function loadProducts() {
-		cachedProducts = await window.api.getProducts();
+	async function loadProducts(page = 1) {
+	currentPage = page;
+	const search = searchInput.value;
+	const { items, totalItems, totalPages } =
+		await window.api.getProductsPaged(search, currentPage, pageSize);
 
-		// tabla
-		renderProducts(cachedProducts);
+	cachedProducts = items;
+	totalProducts = totalItems;
 
-		// select movimientos
+		renderProducts(items);
+		renderPagination();
+		renderMovementSelect(items);
+	}
+	function renderPagination() {
+		const totalPages = Math.ceil(totalProducts / pageSize);
+
+		$('#page-info').textContent = `Página ${currentPage} / ${totalPages}`;
+
+		$('#prev-page').disabled = currentPage <= 1;
+		$('#next-page').disabled = currentPage >= totalPages;
+	}
+
+	$('#prev-page').addEventListener('click', () => {
+		if (currentPage > 1) loadProducts(currentPage - 1);
+	});
+
+	$('#next-page').addEventListener('click', () => {
+		const totalPages = Math.ceil(totalProducts / pageSize);
+		if (currentPage < totalPages) loadProducts(currentPage + 1);
+	});
+
+	function renderMovementSelect(products) {
 		const frag = document.createDocumentFragment();
-		for (const p of cachedProducts) {
+
+		for (const p of products) {
 			const opt = document.createElement("option");
 			opt.value = p.id;
 			opt.textContent = `${p.name} (${p.quantity})`;
 			frag.appendChild(opt);
 		}
+
 		movementProduct.replaceChildren(frag);
 	}
+
 
 	async function loadMovements() {
 		const mv = await window.api.getMovements();
 
 		const frag = document.createDocumentFragment();
-		for (const m of mv.slice(0, 50)) {
+		for (const m of mv.slice(0, 10)) {
 			const li = document.createElement("li");
 			li.className = "list-group-item d-flex justify-content-between align-items-start";
 			li.innerHTML = `
@@ -206,20 +237,7 @@
 
 	searchInput.addEventListener(
 		"input",
-		debounce(() => {
-			const text = searchInput.value.trim().toLowerCase();
-
-			if (!text) {
-				renderProducts(cachedProducts);
-				return;
-			}
-
-			const filtered = cachedProducts.filter((p) =>
-				p.name.toLowerCase().includes(text)
-			);
-
-			renderProducts(filtered);
-		}, 120)
+		debounce(() => loadProducts(), 120)
 	);
 
 	await loadProducts();

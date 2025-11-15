@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
   getProducts: () => ipcRenderer.invoke('getProducts'),
+  getProductsPaged: (search, page, pageSize) => ipcRenderer.invoke('getProductsPaged', search, page, pageSize),
   createProduct: (p) => ipcRenderer.invoke('createProduct', p),
   updateProduct: (p) => ipcRenderer.invoke('updateProduct', p),
   deleteProduct: (id) => ipcRenderer.invoke('deleteProduct', id),

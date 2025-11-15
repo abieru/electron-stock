@@ -36,7 +36,7 @@ app.on('window-all-closed', () => {
 ipcMain.handle("exportCSV", async () => {
     const items = db.getAllProductsForCSV();
 
-    const headers = ["id","name","quantity","min_quantity","category","location"];
+    const headers = ["id","nome","quantidade","quantidade_minima","fornecedor","localizacao"];
     const csvRows = [];
     csvRows.push(headers.join(","));
 
@@ -59,7 +59,31 @@ ipcMain.handle("exportCSV", async () => {
     return { ok: true, filePath };
 });
 
+    ipcMain.handle("exportCSVMovement", async () => {
+        const items = db.getAllMovementsForCSV();
 
+        const headers = ["id","produto","tipo","quantidade","data","descricao"];
+        const csvRows = [];
+        csvRows.push(headers.join(","));
+
+        for (const item of items) {
+            const row = headers.map(h => `"${String(item[h] ?? "").replace(/"/g,'""')}"`);
+            csvRows.push(row.join(","));
+        }
+
+        const csv = csvRows.join("\n");
+
+        const { filePath } = await dialog.showSaveDialog({
+            title: "Salvar CSV",
+            defaultPath: "productos.csv",
+            filters: [{ name: "CSV", extensions: ["csv"] }],
+        });
+
+        if (!filePath) return { ok: false, cancelled: true };
+
+        fs.writeFileSync(filePath, csv);
+        return { ok: true, filePath };
+    });
 
 function safeHandle(channel, handler) {
     ipcMain.handle(channel, async (event, ...args) => {
@@ -82,8 +106,7 @@ safeHandle('getProductsPaged', (search, page, pageSize) => {
     return db.getProductsPaged(search, page, pageSize);
 });
 safeHandle('addMovement', (movement) => db.addMovement(movement));
-safeHandle('getMovements', () => db.getMovements());
-safeHandle('getMovementPaged', (search, page, pageSize) => {
-    return db.getMovementPaged(search, page, pageSize)
+safeHandle('getMovementPaged', (search, date, page, pageSize) => {
+    return db.getMovementPaged(search, date, page, pageSize)
 });
 

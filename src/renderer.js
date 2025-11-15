@@ -1,5 +1,4 @@
 (async function () {
-	console.log("Renderer cargado!");
 	const $ = (sel) => document.querySelector(sel);
 	// DOM
 	const productForm = $('#product-form');
@@ -18,8 +17,10 @@
 	const lowstockAlerts = $('#lowstock-alerts');
 	const btnRefresh = $('#btn-refresh');
 	const btnCSV = $('#btn-get-csv');
+	const btnCSVMovement = $('#btn-get-csv-movement');
 	const searchInput = $('#search-input');
 	const searchInputMovement = $('#search-input-movement');
+	const searchData = $("#search-data");
 	
 	let currentPage = 1;
 	const pageSize = 10;
@@ -86,14 +87,14 @@
 	async function loadMovements(page = 1) {
 		currentPage = page;
 		const search = searchInputMovement.value;
+		const date = searchData.value;
 		const { items, totalItems, totalPages } =
-			await window.api.getMovementPaged(search, currentPage, pageSizeMovement);
+			await window.api.getMovementPaged(search, date, currentPage, pageSizeMovement);
 
 		totalMovements = totalItems;
 		
 		const frag = document.createDocumentFragment();
 		for (const m of items) {
-			console.log(m);
 			const li = document.createElement("li");
 			li.className = "list-group-item d-flex justify-content-between align-items-start";
 			li.innerHTML = `
@@ -259,6 +260,11 @@
 		if (result.ok) alert("CSV exportado corretamente!");
 	});
 
+	btnCSVMovement.addEventListener("click", async () => {
+		const result = await window.api.exportCSVMovement();
+		if (result.ok) alert("CSV exportado corretamente!");
+	});
+
 	function debounce(fn, delay = 200) {
 		let timer;
 		return (...args) => {
@@ -273,6 +279,11 @@
 	);
 
 	searchInputMovement.addEventListener(
+		"input",
+		debounce(() => loadMovements(), 120)
+	);
+
+	searchData.addEventListener(
 		"input",
 		debounce(() => loadMovements(), 120)
 	);

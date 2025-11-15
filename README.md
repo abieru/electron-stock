@@ -30,3 +30,8 @@ npm scripts:
 
 how to build to .exe?
 run `npm run dist` this will be create a .exe file to run
+
+
+release files:
+[download here](https://github.com/abieru/electron-stock/releases/)
+

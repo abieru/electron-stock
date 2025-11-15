@@ -76,11 +76,14 @@ function safeHandle(channel, handler) {
 safeHandle('createProduct', (product) => db.createProduct(product));
 safeHandle('updateProduct', (product) => db.updateProduct(product));
 safeHandle('deleteProduct', (id) => db.deleteProduct(id));
-safeHandle('addMovement', (movement) => db.addMovement(movement));
-safeHandle('getMovements', () => db.getMovements());
 safeHandle('lowStock', () => db.getLowStock());
 safeHandle('searchProducts', (text) => db.searchProducts(text));
 safeHandle('getProductsPaged', (search, page, pageSize) => {
     return db.getProductsPaged(search, page, pageSize);
+});
+safeHandle('addMovement', (movement) => db.addMovement(movement));
+safeHandle('getMovements', () => db.getMovements());
+safeHandle('getMovementPaged', (search, page, pageSize) => {
+    return db.getMovementPaged(search, page, pageSize)
 });
 

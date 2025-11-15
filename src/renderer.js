@@ -19,9 +19,13 @@
 	const btnRefresh = $('#btn-refresh');
 	const btnCSV = $('#btn-get-csv');
 	const searchInput = $('#search-input');
+	const searchInputMovement = $('#search-input-movement');
+	
 	let currentPage = 1;
 	const pageSize = 10;
+	const pageSizeMovement = 5;
 	let totalProducts = 0;
+	let totalMovements = 0;
 
 	let cachedProducts = [];
 
@@ -66,18 +70,47 @@
 	}
 
 	async function loadProducts(page = 1) {
-	currentPage = page;
-	const search = searchInput.value;
-	const { items, totalItems, totalPages } =
-		await window.api.getProductsPaged(search, currentPage, pageSize);
+		currentPage = page;
+		const search = searchInput.value;
+		const { items, totalItems, totalPages } =
+			await window.api.getProductsPaged(search, currentPage, pageSize);
 
-	cachedProducts = items;
-	totalProducts = totalItems;
+		cachedProducts = items;
+		totalProducts = totalItems;
 
-		renderProducts(items);
-		renderPagination();
-		renderMovementSelect(items);
+			renderProducts(items);
+			renderPagination();
+			renderMovementSelect(items);
 	}
+
+	async function loadMovements(page = 1) {
+		currentPage = page;
+		const search = searchInputMovement.value;
+		const { items, totalItems, totalPages } =
+			await window.api.getMovementPaged(search, currentPage, pageSizeMovement);
+
+		totalMovements = totalItems;
+		
+		const frag = document.createDocumentFragment();
+		for (const m of items) {
+			console.log(m);
+			const li = document.createElement("li");
+			li.className = "list-group-item d-flex justify-content-between align-items-start";
+			li.innerHTML = `
+				<div>
+					<strong>${m.product_name || "—"}</strong> — <small>${m.type}</small>
+					<div>Preço Unitário: ${m.price_per_unit ?? 0}  R$</div>	
+					<div><small>${new Date(m.date).toLocaleString()}</small></div>
+					<div><small>${m.note || ""}</small></div>
+				</div>
+				<span class="badge bg-secondary rounded-pill">${m.quantity}</span>
+			`;
+			frag.appendChild(li);
+		}
+		movementsList.replaceChildren(frag);
+		renderPaginationMovements();
+	}
+
 	function renderPagination() {
 		const totalPages = Math.ceil(totalProducts / pageSize);
 
@@ -96,6 +129,24 @@
 		if (currentPage < totalPages) loadProducts(currentPage + 1);
 	});
 
+	function renderPaginationMovements() {
+		const totalPages = Math.ceil(totalMovements / pageSizeMovement);
+
+		$('#page-info-movement').textContent = `Página ${currentPage} / ${totalPages}`;
+
+		$('#prev-page-movement').disabled = currentPage <= 1;
+		$('#next-page-movement').disabled = currentPage >= totalPages;
+	}
+
+	$('#prev-page-movement').addEventListener('click', () => {
+		if (currentPage > 1) loadMovements(currentPage - 1);
+	});
+
+	$('#next-page-movement').addEventListener('click', () => {
+		const totalPages = Math.ceil(totalMovements / pageSizeMovement);
+		if (currentPage < totalPages) loadMovements(currentPage + 1);
+	});
+
 	function renderMovementSelect(products) {
 		const frag = document.createDocumentFragment();
 
@@ -107,28 +158,6 @@
 		}
 
 		movementProduct.replaceChildren(frag);
-	}
-
-
-	async function loadMovements() {
-		const mv = await window.api.getMovements();
-
-		const frag = document.createDocumentFragment();
-		for (const m of mv.slice(0, 10)) {
-			const li = document.createElement("li");
-			li.className = "list-group-item d-flex justify-content-between align-items-start";
-			li.innerHTML = `
-				<div>
-					<strong>${m.product_name || "—"}</strong> — <small>${m.type}</small>
-					<div>Preço Unitário: ${m.price_per_unit ?? 0}  R$</div>	
-					<div><small>${new Date(m.date).toLocaleString()}</small></div>
-					<div><small>${m.note || ""}</small></div>
-				</div>
-				<span class="badge bg-secondary rounded-pill">${m.quantity}</span>
-			`;
-			frag.appendChild(li);
-		}
-		movementsList.replaceChildren(frag);
 	}
 
 	async function loadLowStock() {
@@ -241,6 +270,11 @@
 	searchInput.addEventListener(
 		"input",
 		debounce(() => loadProducts(), 120)
+	);
+
+	searchInputMovement.addEventListener(
+		"input",
+		debounce(() => loadMovements(), 120)
 	);
 
 	await loadProducts();

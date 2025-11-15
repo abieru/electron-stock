@@ -87,6 +87,37 @@ class DB {
 		};
 	}
 
+	getMovementPaged(search, page, pageSize) {
+		const offset = (page - 1) * pageSize;
+
+		let query = `SELECT *, p.name AS product_name FROM movements LEFT JOIN products p ON p.id = product_id`;
+		let params = [];
+		if (search) {
+			query += ` WHERE type LIKE ? OR note LIKE ? OR p.name LIKE ? OR price_per_unit LIKE ?`;
+			params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+		}
+
+		// Obtener total
+
+        
+		const totalQuery = `SELECT COUNT(*) AS count FROM (${query})`;
+		const totalResult = this.db.prepare(totalQuery).get(params);
+		const totalItems = totalResult.count;
+
+		// Obtener página
+        const order = ` ORDER BY date DESC `;
+		const pagedQuery = query + order + ` LIMIT ? OFFSET ?` ;
+		const pagedItems = this.db
+			.prepare(pagedQuery)
+			.all(...params, pageSize, offset);
+
+		return {
+			items: pagedItems,
+			page,
+			totalItems,
+			totalPages: Math.ceil(totalItems / pageSize)
+		};
+	}
 
     getTotalProducts() {
         const row = this.db.prepare(`
@@ -94,10 +125,6 @@ class DB {
         `).get();
         return row.total;
     }
-
-    // ======================
-    // CRUD EXISTENTE
-    // ======================
 
     getAllProducts() {
         return this.db.prepare(`SELECT * FROM products ORDER BY name`).all();
@@ -153,14 +180,6 @@ price_per_unit
         return { ok: true };
     }
 
-    getMovements() {
-        return this.db.prepare(`
-            SELECT mv.*, p.name AS product_name
-            FROM movements mv
-            LEFT JOIN products p ON p.id = mv.product_id
-            ORDER BY date DESC
-        `).all();
-    }
 
     getLowStock() {
         return this.db.prepare(`

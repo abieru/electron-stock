@@ -48,7 +48,7 @@
 								</div>
 							</div>
 							<div class="mb-2 mt-2">
-								<label class="form-label">Categoria</label>
+								<label class="form-label">Fornecedor</label>
 								<input id="product-category" class="form-control">
 							</div>
 							<div class="mb-2">
@@ -90,6 +90,10 @@
 								<label class="form-label">Quantidade</label>
 								<input id="movement-quantity" type="number" class="form-control" min="1" value="1">
 							</div>
+							<div class="mb-2 mt-2">
+								<label class="form-label">Preço Unitário</label>
+								<input id="movement-price" class="form-control" type="number">
+							</div>
 							<div class="col-12">
 								<label class="form-label">Nota</label>
 								<input id="movement-note" class="form-control">
@@ -111,6 +115,7 @@
 							<thead>
 								<tr>
 									<th>Nome</th>
+									<th>Fornecedor</th>
 									<th>Qtde</th>
 									<th>Mín.</th>
 									<th>Ação</th>
@@ -121,7 +126,7 @@
 						<div class="mt-3 d-flex align-items-center gap-3">
 							<button class="btn btn-sm btn-secondary" id="prev-page">Anterior</button>
 							<span id="page-info">Página 1</span>
-							<button class="btn btn-sm btn-secondary" id="next-page">Siguiente</button>
+							<button class="btn btn-sm btn-secondary" id="next-page">Proximo</button>
 						</div>
 						<div id="lowstock-alerts"></div>
 					</div>

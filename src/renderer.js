@@ -40,6 +40,7 @@
 			const tr = document.createElement("tr");
 			tr.innerHTML = `
 				<td>${escapeHtml(p.name)}</td>
+				<td>${p.category}</td>
 				<td>${p.quantity}</td>
 				<td>${p.min_quantity}</td>
 				<td><button class="btn btn-sm btn-outline-primary btn-edit" data-id="${p.id}"><i class="fa-solid fa-pen-to-square"></i> Editar</button></td>
@@ -119,6 +120,7 @@
 			li.innerHTML = `
 				<div>
 					<strong>${m.product_name || "—"}</strong> — <small>${m.type}</small>
+					<div>Preço Unitário: ${m.price_per_unit ?? 0}  R$</div>	
 					<div><small>${new Date(m.date).toLocaleString()}</small></div>
 					<div><small>${m.note || ""}</small></div>
 				</div>
@@ -195,10 +197,10 @@
 
 	movementForm.addEventListener("submit", async (e) => {
 		e.preventDefault();
-
 		const m = {
 			product_id: Number(movementProduct.value),
 			type: $("#movement-type").value,
+			price_per_unit: parseFloat($("#movement-price").value) || 0,
 			quantity: Number($("#movement-quantity").value),
 			note: $("#movement-note").value.trim(),
 		};
@@ -210,6 +212,7 @@
 
 		$("#movement-quantity").value = 1;
 		$("#movement-note").value = "";
+		$("#movement-price").value = 0;
 
 		await loadProducts();
 		await loadMovements();
@@ -224,7 +227,7 @@
 
 	btnCSV.addEventListener("click", async () => {
 		const result = await window.api.exportCSV();
-		if (result.ok) alert("CSV exportado correctamente!");
+		if (result.ok) alert("CSV exportado corretamente!");
 	});
 
 	function debounce(fn, delay = 200) {

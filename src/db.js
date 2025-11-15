@@ -37,11 +37,22 @@ class DB {
         this.db.prepare(createProducts).run();
         this.db.prepare(createMovements).run();
 
+        // -------------------------
+        // 🆕 MIGRAÇÃO: adicionar coluna price_per_unit em movements
+        // -------------------------
+        const columns = this.db.prepare(`PRAGMA table_info(movements);`).all();
+        const hasPrice = columns.some(col => col.name === "price_per_unit");
+
+        if (!hasPrice) {
+            this.db.prepare(`ALTER TABLE movements ADD COLUMN price_per_unit REAL;`).run();
+        }
+
+        // Indexes
         this.db.prepare(`CREATE INDEX IF NOT EXISTS idx_prod_name ON products(name);`).run();
         this.db.prepare(`CREATE INDEX IF NOT EXISTS idx_mov_prod ON movements(product_id);`).run();
         this.db.prepare(`CREATE INDEX IF NOT EXISTS idx_mov_date ON movements(date);`).run();
     }
-
+    
     // ======================
     // PAGINACIÓN REAL
     // ======================
@@ -119,14 +130,14 @@ class DB {
         tx(id);
         return { ok: true };
     }
-
+price_per_unit
     addMovement(m) {
         const date = new Date().toISOString();
 
         const tx = this.db.transaction((data) => {
             this.db.prepare(`
-                INSERT INTO movements (product_id, type, quantity, date, note)
-                VALUES (@product_id, @type, @quantity, @date, @note)
+                INSERT INTO movements (product_id, type, price_per_unit, quantity, date, note)
+                VALUES (@product_id, @type, @price_per_unit, @quantity, @date, @note)
             `).run(data);
 
             const delta = data.type === "ENTRADA"

@@ -26,3 +26,7 @@ npm scripts:
 - run this one `npm install better-sqlite3 --build-from-source --runtime=electron --dist-url=https://electronjs.org/headers --target=26.6.10 --msvs_version=2022`
 
 - `npx electron-rebuild`
+
+
+how to build to .exe?
+run `npm run dist` this will be create a .exe file to run

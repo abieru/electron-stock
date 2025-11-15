@@ -1,15 +1,24 @@
 {
   "name": "inventario-electron",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "App de inventario local con Electron + SQLite",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.abieru.stock",
+    "win": {
+      "target": "nsis", 
+      "icon": "src/assets/icon.ico"
+    }
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "electron": "^26.0.0",
+    "electron-builder": "^26.0.12",
     "electron-rebuild": "^3.2.9"
   },
   "dependencies": {

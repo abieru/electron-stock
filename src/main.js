@@ -3,7 +3,7 @@ const path = require('path');
 const DB = require('./db');
 const fs = require("fs");
 
-const db = new DB(path.join(__dirname, '../resource/db', 'inventario.db'));
+const db = new DB(path.join(app.getPath('userData'), 'inventario.db'));
 
 let mainWindow;
 

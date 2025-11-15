@@ -3,26 +3,26 @@ APP: Inventario local (Electron + SQLite)
 
 requirements:
 
-[link de cosas del vs c++ ](https://aka.ms/vs/17/release/vs_BuildTools.exe)
-
 - Node.js instalado (https://nodejs.org)
 
-✔ Herramientas de compilación de C++ de Visual Studio 2022
+- [link de cosas del vs c++ ](https://aka.ms/vs/17/release/vs_BuildTools.exe)
 
-✔ Windows 11 SDK (10.0.22621.0)
+- Herramientas de compilación de C++ de Visual Studio 2022
 
-✔ Windows 10 SDK (10.0.19041.0)
+- Windows 11 SDK (10.0.22621.0)
 
-✔ Herramientas de CMake
+- Windows 10 SDK (10.0.19041.0)
 
-✔ Características principales de C++
+- Herramientas de CMake
 
-✔ administrador de paquetes vcpkg
+- Características principales de C++
 
-✔ MSVC v143 (IMPORTANTE)
+- administrador de paquetes vcpkg
+
+- MSVC v143 (IMPORTANTE)
 
 npm scripts:
--- run this one npm install better-sqlite3 --build-from-source --runtime=electron --dist-url=https://electronjs.org/headers --target=26.6.10 --msvs_version=2022
--- npx electron-rebuild
 
-// solo lo estoy enviando despus lo refactor lol
+- run this one `npm install better-sqlite3 --build-from-source --runtime=electron --dist-url=https://electronjs.org/headers --target=26.6.10 --msvs_version=2022`
+
+- `npx electron-rebuild`

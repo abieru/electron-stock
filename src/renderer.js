@@ -21,7 +21,7 @@
 	const searchInput = $('#search-input');
 	const searchInputMovement = $('#search-input-movement');
 	const searchData = $("#search-data");
-	
+
 	let currentPage = 1;
 	const pageSize = 10;
 	const pageSizeMovement = 5;
@@ -79,9 +79,9 @@
 		cachedProducts = items;
 		totalProducts = totalItems;
 
-			renderProducts(items);
-			renderPagination();
-			renderMovementSelect(items);
+		renderProducts(items);
+		renderPagination();
+		renderMovementSelect(items);
 	}
 
 	async function loadMovements(page = 1) {
@@ -92,7 +92,7 @@
 			await window.api.getMovementPaged(search, date, currentPage, pageSizeMovement);
 
 		totalMovements = totalItems;
-		
+
 		const frag = document.createDocumentFragment();
 		console.log(items);
 		for (const m of items) {
@@ -174,8 +174,8 @@
 			<strong>Produtos abaixo do mínimo:</strong>
 			<ul>
 				${low
-					.map((p) => `<li>${escapeHtml(p.name)} — ${p.quantity} (mín ${p.min_quantity})</li>`)
-					.join("")}
+				.map((p) => `<li>${escapeHtml(p.name)} — ${p.quantity} (mín ${p.min_quantity})</li>`)
+				.join("")}
 			</ul>
 		`;
 		lowstockAlerts.appendChild(div);

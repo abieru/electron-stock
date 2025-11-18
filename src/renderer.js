@@ -96,9 +96,10 @@
 		for (const m of items) {
 			const li = document.createElement("li");
 			li.className = "list-group-item d-flex justify-content-between align-items-start";
+			//  <small></small>
 			li.innerHTML = `
 				<div>
-					<strong>${m.product_name || "—"}</strong> — <small>${m.type}</small>
+					<strong>${m.product_name || "—"}</strong> —  <span class="badge ${ m.type == "ENTRADA" ? 'bg-success' : 'bg-danger' } rounded-pill">${m.type}</span>
 					<div>Preço Unitário: ${m.price_per_unit ?? 0}  R$</div>	
 					<div><small>${new Date(m.date).toLocaleString()}</small></div>
 					<div><small>${m.note || ""}</small></div>

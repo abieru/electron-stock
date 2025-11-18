@@ -11,7 +11,7 @@
 	const productCancel = $('#product-cancel');
 	const productDelete = $('#product-delete');
 	const productsTableBody = $('#products-table tbody');
-	const movementProduct = $('#movement-product');
+	const movementProductSelect = $('#movement-product');
 	const movementForm = $('#movement-form');
 	const movementsList = $('#movements-list');
 	const lowstockAlerts = $('#lowstock-alerts');
@@ -94,6 +94,7 @@
 		totalMovements = totalItems;
 		
 		const frag = document.createDocumentFragment();
+		console.log(items);
 		for (const m of items) {
 			const li = document.createElement("li");
 			li.className = "list-group-item d-flex justify-content-between align-items-start";
@@ -158,7 +159,7 @@
 			frag.appendChild(opt);
 		}
 
-		movementProduct.replaceChildren(frag);
+		movementProductSelect.replaceChildren(frag);
 	}
 
 	async function loadLowStock() {
@@ -228,7 +229,7 @@
 	movementForm.addEventListener("submit", async (e) => {
 		e.preventDefault();
 		const m = {
-			product_id: Number(movementProduct.value),
+			product_id: Number(movementProductSelect.value),
 			type: $("#movement-type").value,
 			price_per_unit: parseFloat($("#movement-price").value) || 0,
 			quantity: Number($("#movement-quantity").value),
@@ -236,7 +237,7 @@
 		};
 
 		if (!m.product_id || !m.quantity)
-			return alert("Seleccione producto y cantidad válida.");
+			return alert("Seleccione o produto e quantidade.");
 
 		await window.api.addMovement(m);
 
@@ -287,6 +288,12 @@
 		"input",
 		debounce(() => loadMovements(), 120)
 	);
+
+	movementProductSelect.addEventListener("focus", async () => {
+
+	});
+
+
 
 	await loadProducts();
 	await loadMovements();

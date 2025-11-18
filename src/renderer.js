@@ -81,7 +81,6 @@
 
 		renderProducts(items);
 		renderPagination();
-		renderMovementSelect(items);
 	}
 
 	async function loadMovements(page = 1) {
@@ -94,7 +93,6 @@
 		totalMovements = totalItems;
 
 		const frag = document.createDocumentFragment();
-		console.log(items);
 		for (const m of items) {
 			const li = document.createElement("li");
 			li.className = "list-group-item d-flex justify-content-between align-items-start";
@@ -105,7 +103,7 @@
 					<div><small>${new Date(m.date).toLocaleString()}</small></div>
 					<div><small>${m.note || ""}</small></div>
 				</div>
-				<span class="badge bg-secondary rounded-pill">${m.quantity}</span>
+				<span title="Quantidade" class="badge bg-secondary rounded-pill">${m.quantity}</span>
 			`;
 			frag.appendChild(li);
 		}
@@ -116,7 +114,7 @@
 	function renderPagination() {
 		const totalPages = Math.ceil(totalProducts / pageSize);
 
-		$('#page-info').textContent = `Página ${currentPage} / ${totalPages}`;
+		$('#page-info').textContent = `Página ${currentPage} / ${totalPages} (Total: ${totalProducts})`;
 
 		$('#prev-page').disabled = currentPage <= 1;
 		$('#next-page').disabled = currentPage >= totalPages;
@@ -134,7 +132,7 @@
 	function renderPaginationMovements() {
 		const totalPages = Math.ceil(totalMovements / pageSizeMovement);
 
-		$('#page-info-movement').textContent = `Página ${currentPage} / ${totalPages}`;
+		$('#page-info-movement').textContent = `Página ${currentPage} / ${totalPages} (Total: ${totalMovements})`;
 
 		$('#prev-page-movement').disabled = currentPage <= 1;
 		$('#next-page-movement').disabled = currentPage >= totalPages;
@@ -149,10 +147,12 @@
 		if (currentPage < totalPages) loadMovements(currentPage + 1);
 	});
 
-	function renderMovementSelect(products) {
+	async function renderMovementSelect() {
+		const { items } = await window.api.getProductsLazy();
+		
 		const frag = document.createDocumentFragment();
 
-		for (const p of products) {
+		for (const p of items) {
 			const opt = document.createElement("option");
 			opt.value = p.id;
 			opt.textContent = `${p.name} (${p.quantity})`;
@@ -202,6 +202,7 @@
 		resetProductForm();
 		await loadProducts();
 		await loadLowStock();
+		await renderMovementSelect();
 	});
 
 	productCancel.addEventListener("click", resetProductForm);
@@ -215,6 +216,7 @@
 		resetProductForm();
 		await loadProducts();
 		await loadLowStock();
+		await renderMovementSelect();
 	});
 
 	function resetProductForm() {
@@ -289,13 +291,11 @@
 		debounce(() => loadMovements(), 120)
 	);
 
-	movementProductSelect.addEventListener("focus", async () => {
-
-	});
 
 
 
 	await loadProducts();
 	await loadMovements();
 	await loadLowStock();
+	await renderMovementSelect();
 })();

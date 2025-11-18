@@ -97,16 +97,17 @@ function safeHandle(channel, handler) {
 }
 
 
-safeHandle('createProduct', (product) => db.createProduct(product));
-safeHandle('updateProduct', (product) => db.updateProduct(product));
-safeHandle('deleteProduct', (id) => db.deleteProduct(id));
+safeHandle('createProduct', product => db.createProduct(product));
+safeHandle('updateProduct', product => db.updateProduct(product));
+safeHandle('deleteProduct', id => db.deleteProduct(id));
 safeHandle('lowStock', () => db.getLowStock());
-safeHandle('searchProducts', (text) => db.searchProducts(text));
+safeHandle('searchProducts', text => db.searchProducts(text));
 safeHandle('getProductsPaged', (search, page, pageSize) => {
 	return db.getProductsPaged(search, page, pageSize);
 });
-safeHandle('addMovement', (movement) => db.addMovement(movement));
+safeHandle('addMovement', movement => db.addMovement(movement));
 safeHandle('getMovementPaged', (search, date, page, pageSize) => {
 	return db.getMovementPaged(search, date, page, pageSize)
 });
+safeHandle('getProductsLazy', () => db.getProductsLazy());
 

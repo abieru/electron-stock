@@ -12,5 +12,5 @@ contextBridge.exposeInMainWorld('api', {
 	exportCSV: () => ipcRenderer.invoke("exportCSV"),
 	exportCSVMovement: () => ipcRenderer.invoke("exportCSVMovement"),
 	searchProducts: (text) => ipcRenderer.invoke('searchProducts', text),
-
+	getProductsLazy: () => ipcRenderer.invoke('getProductsLazy'),
 });

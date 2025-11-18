@@ -45,7 +45,6 @@ class DB {
 			this.db.prepare(`ALTER TABLE movements ADD COLUMN price_per_unit REAL;`).run();
 		}
 
-		// Indexes
 		this.db.prepare(`CREATE INDEX IF NOT EXISTS idx_prod_name ON products(name);`).run();
 		this.db.prepare(`CREATE INDEX IF NOT EXISTS idx_mov_prod ON movements(product_id);`).run();
 		this.db.prepare(`CREATE INDEX IF NOT EXISTS idx_mov_date ON movements(date);`).run();
@@ -80,6 +79,56 @@ class DB {
 			totalPages: Math.ceil(totalItems / pageSize)
 		};
 	}
+
+	getProductsLazy() {
+		const items = this.db.prepare(`SELECT name, quantity, id FROM products ORDER BY id`).all();
+		return { items };
+	}
+	createProduct(p) {
+		const info = this.db.prepare(`
+			INSERT INTO products (name, quantity, min_quantity, category, location)
+			VALUES (@name, @quantity, @min_quantity, @category, @location)
+		`).run(p);
+		return { id: info.lastInsertRowid };
+	}
+
+	updateProduct(p) {
+		this.db.prepare(`
+			UPDATE products
+			SET name=@name, quantity=@quantity, min_quantity=@min_quantity,
+				category=@category, location=@location
+			WHERE id=@id
+		`).run(p);
+		return { ok: true };
+	}
+
+	deleteProduct(id) {
+		const tx = this.db.transaction((id) => {
+			this.db.prepare(`DELETE FROM movements WHERE product_id = ?`).run(id);
+			this.db.prepare(`DELETE FROM products WHERE id = ?`).run(id);
+		});
+
+		tx(id);
+		return { ok: true };
+	}	
+
+	searchProducts(text) {
+		const like = `%${text}%`;
+		return this.db.prepare(`
+			SELECT * FROM products
+			WHERE name LIKE ? OR category LIKE ? OR location LIKE ?
+			ORDER BY name
+		`).all(like, like, like);
+	}
+
+	getAllProductsForCSV() {
+		return this.db.prepare(`
+			SELECT id, name as nome, quantity as quantidade, min_quantity as quantidade_minima, category as fornecedor, location as localizacao
+			FROM products
+			ORDER BY name
+		`).all();
+	}
+
 
 	getMovementPaged(search, date, page, pageSize) {
 		const offset = (page - 1) * pageSize;
@@ -117,44 +166,6 @@ class DB {
 		};
 	}
 
-	getTotalProducts() {
-		const row = this.db.prepare(`
-			SELECT COUNT(*) AS total FROM products
-		`).get();
-		return row.total;
-	}
-
-	getAllProducts() {
-		return this.db.prepare(`SELECT * FROM products ORDER BY name`).all();
-	}
-
-	createProduct(p) {
-		const info = this.db.prepare(`
-			INSERT INTO products (name, quantity, min_quantity, category, location)
-			VALUES (@name, @quantity, @min_quantity, @category, @location)
-		`).run(p);
-		return { id: info.lastInsertRowid };
-	}
-
-	updateProduct(p) {
-		this.db.prepare(`
-			UPDATE products
-			SET name=@name, quantity=@quantity, min_quantity=@min_quantity,
-				category=@category, location=@location
-			WHERE id=@id
-		`).run(p);
-		return { ok: true };
-	}
-
-	deleteProduct(id) {
-		const tx = this.db.transaction((id) => {
-			this.db.prepare(`DELETE FROM movements WHERE product_id = ?`).run(id);
-			this.db.prepare(`DELETE FROM products WHERE id = ?`).run(id);
-		});
-
-		tx(id);
-		return { ok: true };
-	}
 	addMovement(m) {
 		const date = new Date().toISOString();
 
@@ -177,32 +188,6 @@ class DB {
 		return { ok: true };
 	}
 
-
-	getLowStock() {
-		return this.db.prepare(`
-			SELECT * FROM products
-			WHERE quantity < min_quantity
-			ORDER BY name
-		`).all();
-	}
-
-	searchProducts(text) {
-		const like = `%${text}%`;
-		return this.db.prepare(`
-			SELECT * FROM products
-			WHERE name LIKE ? OR category LIKE ? OR location LIKE ?
-			ORDER BY name
-		`).all(like, like, like);
-	}
-
-	getAllProductsForCSV() {
-		return this.db.prepare(`
-			SELECT id, name as nome, quantity as quantidade, min_quantity as quantidade_minima, category as fornecedor, location as localizacao
-			FROM products
-			ORDER BY name
-		`).all();
-	}
-
 	getAllMovementsForCSV() {
 		return this.db.prepare(`
 			SELECT 
@@ -215,6 +200,15 @@ class DB {
 			ORDER BY name
 		`).all();
 	}
+
+	getLowStock() {
+		return this.db.prepare(`
+			SELECT * FROM products
+			WHERE quantity < min_quantity
+			ORDER BY name
+		`).all();
+	}
+
 }
 
 module.exports = DB;

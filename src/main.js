@@ -100,6 +100,7 @@ function safeHandle(channel, handler) {
 safeHandle('createProduct', product => db.createProduct(product));
 safeHandle('updateProduct', product => db.updateProduct(product));
 safeHandle('deleteProduct', id => db.deleteProduct(id));
+safeHandle('deleteMovement', id => db.deleteMovement(id));
 safeHandle('lowStock', () => db.getLowStock());
 safeHandle('searchProducts', text => db.searchProducts(text));
 safeHandle('getProductsPaged', (search, page, pageSize) => {

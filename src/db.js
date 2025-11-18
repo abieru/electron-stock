@@ -209,6 +209,21 @@ class DB {
 		`).all();
 	}
 
+	deleteMovement(id) {
+		const tx = this.db.transaction(id => {
+			let movementToDelete = this.db.prepare(`select * FROM movements WHERE id = ?`).get(id);
+			let sumOrSub = movementToDelete.type == "ENTRADA" ? '-' : '+';
+			let delta =  sumOrSub + movementToDelete.quantity;
+			this.db.prepare(`UPDATE products set quantity = quantity + ? WHERE id = ?`)
+				.run(delta, movementToDelete.product_id);
+
+			this.db.prepare(`DELETE FROM movements WHERE id = ?`).run(id);
+		});
+
+		tx(id);
+		return { ok: true };
+	}
+
 }
 
 module.exports = DB;

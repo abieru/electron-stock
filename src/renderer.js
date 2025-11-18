@@ -54,7 +54,6 @@
 		}
 		productsTableBody.replaceChildren(frag);
 
-		// listeners de edición
 		productsTableBody.querySelectorAll(".btn-edit").forEach((btn) => {
 			btn.onclick = () => {
 				const id = Number(btn.dataset.id);
@@ -96,7 +95,6 @@
 		for (const m of items) {
 			const li = document.createElement("li");
 			li.className = "list-group-item d-flex justify-content-between align-items-start";
-			//  <small></small>
 			li.innerHTML = `
 				<div>
 					<strong>${m.product_name || "—"}</strong> —  <span class="badge ${ m.type == "ENTRADA" ? 'bg-success' : 'bg-danger' } rounded-pill">${m.type}</span>
@@ -104,12 +102,29 @@
 					<div><small>${new Date(m.date).toLocaleString()}</small></div>
 					<div><small>${m.note || ""}</small></div>
 				</div>
-				<span title="Quantidade" class="badge bg-secondary rounded-pill">${m.quantity}</span>
+				<div>
+					<span title="Quantidade" class="badge bg-secondary rounded-pill">${m.quantity}</span>
+					<button class="btn btn-sm btn-danger btn-delete-movement" data-id="${m.id}"><i class="fa-solid fa-trash"></i></button>
+				</div>
 			`;
 			frag.appendChild(li);
 		}
 		movementsList.replaceChildren(frag);
 		renderPaginationMovements();
+
+		movementsList.querySelectorAll(".btn-delete-movement").forEach(btn => {
+			btn.onclick = async () => {
+				const id = Number(btn.dataset.id);
+				if (!confirm("Esta ação é irreversível, realmente deseja excluir este movimento?")) {
+						return;
+					}
+					await window.api.deleteMovement(Number(id));
+					await loadProducts();
+					await loadLowStock();
+					await loadMovements();
+					await renderMovementSelect();
+				};
+		});
 	}
 
 	function renderPagination() {
@@ -291,8 +306,6 @@
 		"input",
 		debounce(() => loadMovements(), 120)
 	);
-
-
 
 
 	await loadProducts();

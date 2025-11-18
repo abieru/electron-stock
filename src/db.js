@@ -84,18 +84,17 @@ class DB {
 	getMovementPaged(search, date, page, pageSize) {
 		const offset = (page - 1) * pageSize;
 
-		let query = `SELECT *, p.name AS product_name FROM movements LEFT JOIN products p ON p.id = product_id`;
+		let query = `SELECT m.*, p.name AS product_name FROM movements m LEFT JOIN products p ON p.id = m.product_id`;
 		let params = [];
 		if (search ||date) {
 			query += ` WHERE`;
 		}
 		if (search) {
-			query += ` type LIKE ? OR note LIKE ? OR p.name LIKE ? OR price_per_unit LIKE ?`;
+			query += ` m.type LIKE ? OR m.note LIKE ? OR p.name LIKE ? OR m.price_per_unit LIKE ?`;
 			params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
 		}
 		if (date) {
-			console.log("date filter:", date);
-			query += ` date LIKE ?`;
+			query += ` m.date LIKE ?`;
 			params.push(`%${date}%`);
 		}
 
@@ -156,7 +155,6 @@ class DB {
 		tx(id);
 		return { ok: true };
 	}
-	price_per_unit
 	addMovement(m) {
 		const date = new Date().toISOString();
 

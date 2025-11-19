@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
 const DB = require('./db');
 const fs = require("fs");
@@ -8,105 +8,112 @@ const db = new DB(path.join(app.getPath('userData'), 'inventario.db'));
 let mainWindow;
 
 function createWindow() {
-    mainWindow = new BrowserWindow({
-        width: 1400,
-        height: 1000,
-        autoHideMenuBar: true,
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true,
-            nodeIntegration: false,
-        }
-    });
+	mainWindow = new BrowserWindow({
+		width: 1400,
+		height: 1000,
+		autoHideMenuBar: true,
+		webPreferences: {
+			preload: path.join(__dirname, 'preload.js'),
+			contextIsolation: true,
+			nodeIntegration: false,
+		}
+	});
 
-    mainWindow.loadFile(path.join(__dirname, 'index.html'));
-	// mainWindow.webContents.openDevTools();
+	mainWindow.loadFile(path.join(__dirname, 'index.html'));
+	mainWindow.webContents.openDevTools();
+	mainWindow.on('ready', () => { 
+		Menu.setApplicationMenu(null);
+	});	
 }
 
 app.whenReady().then(() => {
-    db.init();
-    createWindow();
+	db.init();
+	createWindow();
 });
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit();
+	if (process.platform !== 'darwin') app.quit();
 });
 
 
 ipcMain.handle("exportCSV", async () => {
-    const items = db.getAllProductsForCSV();
+	const items = db.getAllProductsForCSV();
 
-    const headers = ["id","nome","quantidade","quantidade_minima","fornecedor","localizacao"];
-    const csvRows = [];
-    csvRows.push(headers.join(","));
+	const headers = ["id", "nome", "quantidade", "quantidade_minima", "fornecedor", "localizacao"];
+	const csvRows = [];
+	csvRows.push(headers.join(","));
 
-    for (const item of items) {
-        const row = headers.map(h => `"${String(item[h] ?? "").replace(/"/g,'""')}"`);
-        csvRows.push(row.join(","));
-    }
+	for (const item of items) {
+		const row = headers.map(h => `"${String(item[h] ?? "").replace(/"/g, '""')}"`);
+		csvRows.push(row.join(","));
+	}
 
-    const csv = csvRows.join("\n");
+	const csv = csvRows.join("\n");
 
-    const { filePath } = await dialog.showSaveDialog({
-        title: "Salvar CSV",
-        defaultPath: "productos.csv",
-        filters: [{ name: "CSV", extensions: ["csv"] }],
-    });
+	const { filePath } = await dialog.showSaveDialog({
+		title: "Salvar CSV",
+		defaultPath: "productos.csv",
+		filters: [{ name: "CSV", extensions: ["csv"] }],
+	});
 
-    if (!filePath) return { ok: false, cancelled: true };
+	if (!filePath) return { ok: false, cancelled: true };
 
-    fs.writeFileSync(filePath, csv);
-    return { ok: true, filePath };
+	fs.writeFileSync(filePath, csv);
+	return { ok: true, filePath };
 });
 
-    ipcMain.handle("exportCSVMovement", async () => {
-        const items = db.getAllMovementsForCSV();
+ipcMain.handle("exportCSVMovement", async () => {
+	const items = db.getAllMovementsForCSV();
 
-        const headers = ["id","produto","tipo","quantidade","data","descricao"];
-        const csvRows = [];
-        csvRows.push(headers.join(","));
+	const headers = ["id", "produto", "tipo", "quantidade", "data", "descricao"];
+	const csvRows = [];
+	csvRows.push(headers.join(","));
 
-        for (const item of items) {
-            const row = headers.map(h => `"${String(item[h] ?? "").replace(/"/g,'""')}"`);
-            csvRows.push(row.join(","));
-        }
+	for (const item of items) {
+		const row = headers.map(h => `"${String(item[h] ?? "").replace(/"/g, '""')}"`);
+		csvRows.push(row.join(","));
+	}
 
-        const csv = csvRows.join("\n");
+	const csv = csvRows.join("\n");
 
-        const { filePath } = await dialog.showSaveDialog({
-            title: "Salvar CSV",
-            defaultPath: "productos.csv",
-            filters: [{ name: "CSV", extensions: ["csv"] }],
-        });
+	const { filePath } = await dialog.showSaveDialog({
+		title: "Salvar CSV",
+		defaultPath: "movimentos.csv",
+		filters: [{ name: "CSV", extensions: ["csv"] }],
+	});
 
-        if (!filePath) return { ok: false, cancelled: true };
+	if (!filePath) return { ok: false, cancelled: true };
 
-        fs.writeFileSync(filePath, csv);
-        return { ok: true, filePath };
-    });
+	fs.writeFileSync(filePath, csv);
+	return { ok: true, filePath };
+});
+
 
 function safeHandle(channel, handler) {
-    ipcMain.handle(channel, async (event, ...args) => {
-        try {
-            return await handler(...args);
-        } catch (err) {
-            console.error(`❌ Error en IPC "${channel}":`, err);
-            return { error: true, message: err.message };
-        }
-    });
+	ipcMain.handle(channel, async (event, ...args) => {
+		try {
+			return await handler(...args);
+		} catch (err) {
+			console.error(`❌ Error en IPC "${channel}":`, err);
+			return { error: true, message: err.message };
+		}
+	});
 }
 
 
-safeHandle('createProduct', (product) => db.createProduct(product));
-safeHandle('updateProduct', (product) => db.updateProduct(product));
-safeHandle('deleteProduct', (id) => db.deleteProduct(id));
+safeHandle('createProduct', product => db.createProduct(product));
+safeHandle('updateProduct', product => db.updateProduct(product));
+safeHandle('deleteProduct', id => db.deleteProduct(id));
+safeHandle('deleteMovement', id => db.deleteMovement(id));
 safeHandle('lowStock', () => db.getLowStock());
-safeHandle('searchProducts', (text) => db.searchProducts(text));
+safeHandle('searchProducts', text => db.searchProducts(text));
 safeHandle('getProductsPaged', (search, page, pageSize) => {
-    return db.getProductsPaged(search, page, pageSize);
+	return db.getProductsPaged(search, page, pageSize);
 });
-safeHandle('addMovement', (movement) => db.addMovement(movement));
+safeHandle('addMovement', movement => db.addMovement(movement));
 safeHandle('getMovementPaged', (search, date, page, pageSize) => {
-    return db.getMovementPaged(search, date, page, pageSize)
+	return db.getMovementPaged(search, date, page, pageSize)
 });
+safeHandle('getProductsLazy', () => db.getProductsLazy());
+safeHandle('getMovementsFiltered', filter => db.getMovementsFiltered(filter));
 

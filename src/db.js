@@ -45,7 +45,6 @@ class DB {
 			this.db.prepare(`ALTER TABLE movements ADD COLUMN price_per_unit REAL;`).run();
 		}
 
-		// Indexes
 		this.db.prepare(`CREATE INDEX IF NOT EXISTS idx_prod_name ON products(name);`).run();
 		this.db.prepare(`CREATE INDEX IF NOT EXISTS idx_mov_prod ON movements(product_id);`).run();
 		this.db.prepare(`CREATE INDEX IF NOT EXISTS idx_mov_date ON movements(date);`).run();
@@ -81,54 +80,10 @@ class DB {
 		};
 	}
 
-	getMovementPaged(search, date, page, pageSize) {
-		const offset = (page - 1) * pageSize;
-
-		let query = `SELECT *, p.name AS product_name FROM movements LEFT JOIN products p ON p.id = product_id`;
-		let params = [];
-		if (search ||date) {
-			query += ` WHERE`;
-		}
-		if (search) {
-			query += ` type LIKE ? OR note LIKE ? OR p.name LIKE ? OR price_per_unit LIKE ?`;
-			params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
-		}
-		if (date) {
-			console.log("date filter:", date);
-			query += ` date LIKE ?`;
-			params.push(`%${date}%`);
-		}
-
-
-		const totalQuery = `SELECT COUNT(*) AS count FROM (${query})`;
-		const totalResult = this.db.prepare(totalQuery).get(params);
-		const totalItems = totalResult.count;
-
-		const order = ` ORDER BY date DESC `;
-		const pagedQuery = query + order + ` LIMIT ? OFFSET ?`;
-		const pagedItems = this.db
-			.prepare(pagedQuery)
-			.all(...params, pageSize, offset);
-
-		return {
-			items: pagedItems,
-			page,
-			totalItems,
-			totalPages: Math.ceil(totalItems / pageSize)
-		};
+	getProductsLazy() {
+		const items = this.db.prepare(`SELECT name, quantity, id FROM products ORDER BY id`).all();
+		return { items };
 	}
-
-	getTotalProducts() {
-		const row = this.db.prepare(`
-			SELECT COUNT(*) AS total FROM products
-		`).get();
-		return row.total;
-	}
-
-	getAllProducts() {
-		return this.db.prepare(`SELECT * FROM products ORDER BY name`).all();
-	}
-
 	createProduct(p) {
 		const info = this.db.prepare(`
 			INSERT INTO products (name, quantity, min_quantity, category, location)
@@ -155,8 +110,62 @@ class DB {
 
 		tx(id);
 		return { ok: true };
+	}	
+
+	searchProducts(text) {
+		const like = `%${text}%`;
+		return this.db.prepare(`
+			SELECT * FROM products
+			WHERE name LIKE ? OR category LIKE ? OR location LIKE ?
+			ORDER BY name
+		`).all(like, like, like);
 	}
-	price_per_unit
+
+	getAllProductsForCSV() {
+		return this.db.prepare(`
+			SELECT id, name as nome, quantity as quantidade, min_quantity as quantidade_minima, category as fornecedor, location as localizacao
+			FROM products
+			ORDER BY name
+		`).all();
+	}
+
+
+	getMovementPaged(search, date, page, pageSize) {
+		const offset = (page - 1) * pageSize;
+
+		let query = `SELECT m.*, p.name AS product_name FROM movements m LEFT JOIN products p ON p.id = m.product_id`;
+		let params = [];
+		if (search ||date) {
+			query += ` WHERE`;
+		}
+		if (search) {
+			query += ` m.type LIKE ? OR m.note LIKE ? OR p.name LIKE ? OR m.price_per_unit LIKE ?`;
+			params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+		}
+		if (date) {
+			query += ` m.date LIKE ?`;
+			params.push(`%${date}%`);
+		}
+
+
+		const totalQuery = `SELECT COUNT(*) AS count FROM (${query})`;
+		const totalResult = this.db.prepare(totalQuery).get(params);
+		const totalItems = totalResult.count;
+
+		const order = ` ORDER BY date DESC `;
+		const pagedQuery = query + order + ` LIMIT ? OFFSET ?`;
+		const pagedItems = this.db
+			.prepare(pagedQuery)
+			.all(...params, pageSize, offset);
+
+		return {
+			items: pagedItems,
+			page,
+			totalItems,
+			totalPages: Math.ceil(totalItems / pageSize)
+		};
+	}
+
 	addMovement(m) {
 		const date = new Date().toISOString();
 
@@ -179,32 +188,6 @@ class DB {
 		return { ok: true };
 	}
 
-
-	getLowStock() {
-		return this.db.prepare(`
-			SELECT * FROM products
-			WHERE quantity < min_quantity
-			ORDER BY name
-		`).all();
-	}
-
-	searchProducts(text) {
-		const like = `%${text}%`;
-		return this.db.prepare(`
-			SELECT * FROM products
-			WHERE name LIKE ? OR category LIKE ? OR location LIKE ?
-			ORDER BY name
-		`).all(like, like, like);
-	}
-
-	getAllProductsForCSV() {
-		return this.db.prepare(`
-			SELECT id, name as nome, quantity as quantidade, min_quantity as quantidade_minima, category as fornecedor, location as localizacao
-			FROM products
-			ORDER BY name
-		`).all();
-	}
-
 	getAllMovementsForCSV() {
 		return this.db.prepare(`
 			SELECT 
@@ -217,6 +200,43 @@ class DB {
 			ORDER BY name
 		`).all();
 	}
+
+	getMovementsFiltered(filters) {
+		const { start, end, type } = filters;
+		const query = `
+			SELECT m.*, p.name AS product_name 
+			FROM movements m left JOIN products p ON p.id = m.product_id 
+			WHERE m.price_per_unit IS NOT NULL AND
+			m.date BETWEEN ? AND ?
+			AND m.type = ?
+		`;
+
+		return this.db.prepare(query).all(start, end, type);
+	}
+		
+	getLowStock() {
+		return this.db.prepare(`
+			SELECT * FROM products
+			WHERE quantity < min_quantity
+			ORDER BY name
+		`).all();
+	}
+
+	deleteMovement(id) {
+		const tx = this.db.transaction(id => {
+			let movementToDelete = this.db.prepare(`select * FROM movements WHERE id = ?`).get(id);
+			let sumOrSub = movementToDelete.type == "ENTRADA" ? '-' : '+';
+			let delta =  sumOrSub + movementToDelete.quantity;
+			this.db.prepare(`UPDATE products set quantity = quantity + ? WHERE id = ?`)
+				.run(delta, movementToDelete.product_id);
+
+			this.db.prepare(`DELETE FROM movements WHERE id = ?`).run(id);
+		});
+
+		tx(id);
+		return { ok: true };
+	}
+
 }
 
 module.exports = DB;

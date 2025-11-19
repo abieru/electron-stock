@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
 const DB = require('./db');
 const fs = require("fs");
@@ -21,6 +21,9 @@ function createWindow() {
 
 	mainWindow.loadFile(path.join(__dirname, 'index.html'));
 	mainWindow.webContents.openDevTools();
+	mainWindow.on('ready', () => { 
+		Menu.setApplicationMenu(null);
+	});	
 }
 
 app.whenReady().then(() => {
@@ -75,7 +78,7 @@ ipcMain.handle("exportCSVMovement", async () => {
 
 	const { filePath } = await dialog.showSaveDialog({
 		title: "Salvar CSV",
-		defaultPath: "productos.csv",
+		defaultPath: "movimentos.csv",
 		filters: [{ name: "CSV", extensions: ["csv"] }],
 	});
 

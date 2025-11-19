@@ -23,6 +23,7 @@
 	const searchData = $("#search-data");
 
 	let currentPage = 1;
+	let currentPageMovement = 1;
 	const pageSize = 10;
 	const pageSizeMovement = 5;
 	let totalProducts = 0;
@@ -83,14 +84,13 @@
 	}
 
 	async function loadMovements(page = 1) {
-		currentPage = page;
+		currentPageMovement = page;
 		const search = searchInputMovement.value;
 		const date = searchData.value;
 		const { items, totalItems, totalPages } =
-			await window.api.getMovementPaged(search, date, currentPage, pageSizeMovement);
+			await window.api.getMovementPaged(search, date, currentPageMovement, pageSizeMovement);
 
 		totalMovements = totalItems;
-
 		const frag = document.createDocumentFragment();
 		for (const m of items) {
 			const li = document.createElement("li");
@@ -119,10 +119,12 @@
 						return;
 					}
 					await window.api.deleteMovement(Number(id));
-					await loadProducts();
-					await loadLowStock();
-					await loadMovements();
-					await renderMovementSelect();
+					await Promise.all([
+						loadProducts(),
+						loadLowStock(),
+						loadMovements(),
+						renderMovementSelect()
+					]);
 				};
 		});
 	}
@@ -148,19 +150,19 @@
 	function renderPaginationMovements() {
 		const totalPages = Math.ceil(totalMovements / pageSizeMovement);
 
-		$('#page-info-movement').textContent = `Página ${currentPage} / ${totalPages} (Total: ${totalMovements})`;
+		$('#page-info-movement').textContent = `Página ${currentPageMovement} / ${totalPages} (Total: ${totalMovements})`;
 
-		$('#prev-page-movement').disabled = currentPage <= 1;
-		$('#next-page-movement').disabled = currentPage >= totalPages;
+		$('#prev-page-movement').disabled = currentPageMovement <= 1;
+		$('#next-page-movement').disabled = currentPageMovement >= totalPages;
 	}
 
 	$('#prev-page-movement').addEventListener('click', () => {
-		if (currentPage > 1) loadMovements(currentPage - 1);
+		if (currentPageMovement > 1) loadMovements(currentPageMovement - 1);
 	});
 
 	$('#next-page-movement').addEventListener('click', () => {
 		const totalPages = Math.ceil(totalMovements / pageSizeMovement);
-		if (currentPage < totalPages) loadMovements(currentPage + 1);
+		if (currentPageMovement < totalPages) loadMovements(currentPageMovement + 1);
 	});
 
 	async function renderMovementSelect() {
@@ -216,9 +218,12 @@
 		}
 
 		resetProductForm();
-		await loadProducts();
-		await loadLowStock();
-		await renderMovementSelect();
+		await Promise.all([
+			loadProducts(),
+			loadLowStock(),
+			renderMovementSelect()
+		]);
+
 	});
 
 	productCancel.addEventListener("click", resetProductForm);
@@ -230,9 +235,11 @@
 		await window.api.deleteProduct(Number(productId.value));
 
 		resetProductForm();
-		await loadProducts();
-		await loadLowStock();
-		await renderMovementSelect();
+		await Promise.all([
+			loadProducts(),
+			loadLowStock(),
+			renderMovementSelect()
+		]);
 	});
 
 	function resetProductForm() {
@@ -266,12 +273,16 @@
 		await loadProducts();
 		await loadMovements();
 		await loadLowStock();
+		await renderMovementSelect();
 	});
 
 	btnRefresh.addEventListener("click", async () => {
-		await loadProducts();
-		await loadMovements();
-		await loadLowStock();
+		await Promise.all([
+			loadProducts(),
+			loadLowStock(),
+			loadMovements(),
+			renderMovementSelect()
+		]);
 	});
 
 	btnCSV.addEventListener("click", async () => {
@@ -308,8 +319,11 @@
 	);
 
 
-	await loadProducts();
-	await loadMovements();
-	await loadLowStock();
-	await renderMovementSelect();
+	await Promise.all([
+		loadProducts(),
+		loadLowStock(),
+		loadMovements(),
+		renderMovementSelect()
+	]);
+
 })();

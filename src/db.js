@@ -53,21 +53,20 @@ class DB {
 	getProductsPaged(search, page, pageSize) {
 		const offset = (page - 1) * pageSize;
 
-		let query = `SELECT * FROM products`;
+		let query = `SELECT * FROM products `;
 		let params = [];
 
 		if (search) {
-			query += ` WHERE name LIKE ? OR category LIKE ?`;
+			query += `WHERE name LIKE ? OR category LIKE ?`;
 			params.push(`%${search}%`, `%${search}%`);
 		}
 
-		// Obtener total
 		const totalQuery = `SELECT COUNT(*) AS count FROM (${query})`;
 		const totalResult = this.db.prepare(totalQuery).get(params);
 		const totalItems = totalResult.count;
 
-		// Obtener página
-		const pagedQuery = query + ` LIMIT ? OFFSET ?`;
+		const pagedQuery = query +  `ORDER BY UPPER(name) ASC  LIMIT ? OFFSET ?`;
+		
 		const pagedItems = this.db
 			.prepare(pagedQuery)
 			.all(...params, pageSize, offset);

@@ -31,7 +31,13 @@ npm scripts:
 how to build to .exe?
 run `npm run dist` this will be create a .exe file to run
 
-
 release files:
 [download here](https://github.com/abieru/electron-stock/releases/)
+
+
+to do:
+
+- Refactor in separate db.js file to each table
+- make a  button to swithc dark mode
+
 

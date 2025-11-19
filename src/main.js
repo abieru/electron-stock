@@ -88,6 +88,7 @@ ipcMain.handle("exportCSVMovement", async () => {
 	return { ok: true, filePath };
 });
 
+
 function safeHandle(channel, handler) {
 	ipcMain.handle(channel, async (event, ...args) => {
 		try {
@@ -114,4 +115,5 @@ safeHandle('getMovementPaged', (search, date, page, pageSize) => {
 	return db.getMovementPaged(search, date, page, pageSize)
 });
 safeHandle('getProductsLazy', () => db.getProductsLazy());
+safeHandle('getMovementsFiltered', filter => db.getMovementsFiltered(filter));
 

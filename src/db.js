@@ -201,6 +201,19 @@ class DB {
 		`).all();
 	}
 
+	getMovementsFiltered(filters) {
+		const { start, end, type } = filters;
+		const query = `
+			SELECT m.*, p.name AS product_name 
+			FROM movements m left JOIN products p ON p.id = m.product_id 
+			WHERE m.price_per_unit IS NOT NULL AND
+			m.date BETWEEN ? AND ?
+			AND m.type = ?
+		`;
+
+		return this.db.prepare(query).all(start, end, type);
+	}
+		
 	getLowStock() {
 		return this.db.prepare(`
 			SELECT * FROM products

@@ -14,4 +14,6 @@ contextBridge.exposeInMainWorld('api', {
 	exportCSVMovement: () => ipcRenderer.invoke("exportCSVMovement"),
 	searchProducts: (text) => ipcRenderer.invoke('searchProducts', text),
 	getProductsLazy: () => ipcRenderer.invoke('getProductsLazy'),
+	getMovementsFiltered: (filter) => ipcRenderer.invoke("getMovementsFiltered", filter)
+
 });

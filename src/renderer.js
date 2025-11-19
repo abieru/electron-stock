@@ -124,7 +124,8 @@
 					loadProducts(),
 					loadLowStock(),
 					loadMovements(),
-					renderMovementSelect()
+					renderMovementSelect(),
+					// renderGraficoGastos()
 				]);
 			};
 		});
@@ -249,10 +250,78 @@
 
 	});
 
+	let chart;
+	async function loadChart() {
+		const start = document.getElementById("chart-start").value;
+		const end   = document.getElementById("chart-end").value;
+		const type  = document.getElementById("chart-type").value;
+
+		const items = await window.api.getMovementsFiltered({ start, end, type });
+		iziToast.info({
+			title: 'Informação',
+			message: `Grafico atualizado com ${items.length} registros.`,
+			position: 'topRight'
+		});
+		const totals = {};
+		for (const m of items) {
+			const name = m.product_name;
+			const total = m.quantity * (m.price_per_unit ?? 0);
+
+			totals[name] = (totals[name] || 0) + total;
+		}
+
+		const labels = Object.keys(totals);
+		const values = Object.values(totals);
+
+		if (chart) chart.destroy();
+
+		const ctx = document.getElementById("myChart").getContext("2d");
+
+		chart = new Chart(ctx, {
+			type: "bar",
+			data: {
+				labels,
+				datasets: [{
+					label: `Total (${type})`,
+					data: values
+				}]
+			}
+		});
+	}
+
+	document.getElementById("btn-load-chart").addEventListener("click", loadChart);
+
+
+	// cargar con filtro
+	// async function loadChartFiltered() {
+	// 	const start = document.getElementById("chart-start").value;
+	// 	const end = document.getElementById("chart-end").value;
+
+	// 	if (!start || !end) {
+	// 		toast.error("Selecione uma data inicial e final");
+	// 		return;
+	// 	}
+
+	// 	const data = await window.api.getGastosPorPeriodo(start, end);
+
+	// 	const labels = data.map(r => new Date(r.date).toLocaleDateString());
+	// 	const values = data.map(r => r.total);
+
+	// 	renderGastosChart(labels, values);
+
+	// 	toast.success("Gráfico atualizado!");
+	// }
+
+	// Botón de filtro
+	// document.getElementById("btn-load-chart").onclick = loadChartFiltered;
+
+	// cargar no inicio
+	// loadChartDefault();
+
 	productCancel.addEventListener("click", resetProductForm);
 
 	productDelete.addEventListener("click", async () => {
-		if (!productId.value) {
+		if (!productId.value) {z
 			iziToast.info({
 				title: 'Info',
 				message: 'Seleccione un produto.',
@@ -329,7 +398,7 @@
 			loadProducts(),
 			loadLowStock(),
 			loadMovements(),
-			renderMovementSelect()
+			renderMovementSelect(),
 		]);
 	});
 
@@ -383,7 +452,7 @@
 		loadProducts(),
 		loadLowStock(),
 		loadMovements(),
-		renderMovementSelect()
+		renderMovementSelect(),
 	]);
 
 })();

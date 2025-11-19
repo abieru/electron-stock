@@ -11,7 +11,7 @@
 	const productCancel = $('#product-cancel');
 	const productDelete = $('#product-delete');
 	const productsTableBody = $('#products-table tbody');
-	const movementProduct = $('#movement-product');
+	const movementProductSelect = $('#movement-product');
 	const movementForm = $('#movement-form');
 	const movementsList = $('#movements-list');
 	const lowstockAlerts = $('#lowstock-alerts');
@@ -21,8 +21,9 @@
 	const searchInput = $('#search-input');
 	const searchInputMovement = $('#search-input-movement');
 	const searchData = $("#search-data");
-	
+
 	let currentPage = 1;
+	let currentPageMovement = 1;
 	const pageSize = 10;
 	const pageSizeMovement = 5;
 	let totalProducts = 0;
@@ -54,7 +55,6 @@
 		}
 		productsTableBody.replaceChildren(frag);
 
-		// listeners de edición
 		productsTableBody.querySelectorAll(".btn-edit").forEach((btn) => {
 			btn.onclick = () => {
 				const id = Number(btn.dataset.id);
@@ -79,43 +79,79 @@
 		cachedProducts = items;
 		totalProducts = totalItems;
 
-			renderProducts(items);
-			renderPagination();
-			renderMovementSelect(items);
+		renderProducts(items);
+		renderPagination();
 	}
 
 	async function loadMovements(page = 1) {
-		currentPage = page;
+		currentPageMovement = page;
 		const search = searchInputMovement.value;
 		const date = searchData.value;
 		const { items, totalItems, totalPages } =
-			await window.api.getMovementPaged(search, date, currentPage, pageSizeMovement);
+			await window.api.getMovementPaged(search, date, currentPageMovement, pageSizeMovement);
 
 		totalMovements = totalItems;
-		
 		const frag = document.createDocumentFragment();
 		for (const m of items) {
 			const li = document.createElement("li");
 			li.className = "list-group-item d-flex justify-content-between align-items-start";
 			li.innerHTML = `
 				<div>
-					<strong>${m.product_name || "—"}</strong> — <small>${m.type}</small>
+					<strong>${m.product_name || "—"}</strong> —  <span class="badge ${ m.type == "ENTRADA" ? 'bg-success' : 'bg-danger' } rounded-pill">${m.type}</span>
 					<div>Preço Unitário: ${m.price_per_unit ?? 0}  R$</div>	
 					<div><small>${new Date(m.date).toLocaleString()}</small></div>
 					<div><small>${m.note || ""}</small></div>
 				</div>
-				<span class="badge bg-secondary rounded-pill">${m.quantity}</span>
+				<div>
+					<span title="Quantidade" class="badge bg-secondary rounded-pill">${m.quantity}</span>
+					<button class="btn btn-sm btn-danger btn-delete-movement" data-id="${m.id}"><i class="fa-solid fa-trash"></i></button>
+				</div>
 			`;
 			frag.appendChild(li);
 		}
 		movementsList.replaceChildren(frag);
 		renderPaginationMovements();
+
+		movementsList.querySelectorAll(".btn-delete-movement").forEach(btn => {
+			btn.onclick = async () => {
+				const id = Number(btn.dataset.id);
+				 const ok = await showConfirmDelete();
+				if (!ok) {
+					return;
+				}
+				await window.api.deleteMovement(Number(id));
+				await Promise.all([
+					loadProducts(),
+					loadLowStock(),
+					loadMovements(),
+					renderMovementSelect(),
+					// renderGraficoGastos()
+				]);
+			};
+		});
 	}
 
+	function showConfirmDelete() {
+		return new Promise(resolve => {
+			const modal = new bootstrap.Modal(document.getElementById("confirmDeleteModal"));
+
+			const btn = document.getElementById("confirmDeleteBtn");
+
+			const cancelHandler = () => resolve(false);
+			const confirmHandler = () => resolve(true);
+
+			document.querySelector("#confirmDeleteModal .btn-secondary")
+				.onclick = cancelHandler;
+
+			btn.onclick = confirmHandler;
+
+			modal.show();
+		});
+	}
 	function renderPagination() {
 		const totalPages = Math.ceil(totalProducts / pageSize);
 
-		$('#page-info').textContent = `Página ${currentPage} / ${totalPages}`;
+		$('#page-info').textContent = `Página ${currentPage} / ${totalPages} (Total: ${totalProducts})`;
 
 		$('#prev-page').disabled = currentPage <= 1;
 		$('#next-page').disabled = currentPage >= totalPages;
@@ -133,32 +169,34 @@
 	function renderPaginationMovements() {
 		const totalPages = Math.ceil(totalMovements / pageSizeMovement);
 
-		$('#page-info-movement').textContent = `Página ${currentPage} / ${totalPages}`;
+		$('#page-info-movement').textContent = `Página ${currentPageMovement} / ${totalPages} (Total: ${totalMovements})`;
 
-		$('#prev-page-movement').disabled = currentPage <= 1;
-		$('#next-page-movement').disabled = currentPage >= totalPages;
+		$('#prev-page-movement').disabled = currentPageMovement <= 1;
+		$('#next-page-movement').disabled = currentPageMovement >= totalPages;
 	}
 
 	$('#prev-page-movement').addEventListener('click', () => {
-		if (currentPage > 1) loadMovements(currentPage - 1);
+		if (currentPageMovement > 1) loadMovements(currentPageMovement - 1);
 	});
 
 	$('#next-page-movement').addEventListener('click', () => {
 		const totalPages = Math.ceil(totalMovements / pageSizeMovement);
-		if (currentPage < totalPages) loadMovements(currentPage + 1);
+		if (currentPageMovement < totalPages) loadMovements(currentPageMovement + 1);
 	});
 
-	function renderMovementSelect(products) {
+	async function renderMovementSelect() {
+		const { items } = await window.api.getProductsLazy();
+		
 		const frag = document.createDocumentFragment();
 
-		for (const p of products) {
+		for (const p of items) {
 			const opt = document.createElement("option");
 			opt.value = p.id;
 			opt.textContent = `${p.name} (${p.quantity})`;
 			frag.appendChild(opt);
 		}
 
-		movementProduct.replaceChildren(frag);
+		movementProductSelect.replaceChildren(frag);
 	}
 
 	async function loadLowStock() {
@@ -173,8 +211,8 @@
 			<strong>Produtos abaixo do mínimo:</strong>
 			<ul>
 				${low
-					.map((p) => `<li>${escapeHtml(p.name)} — ${p.quantity} (mín ${p.min_quantity})</li>`)
-					.join("")}
+				.map((p) => `<li>${escapeHtml(p.name)} — ${p.quantity} (mín ${p.min_quantity})</li>`)
+				.join("")}
 			</ul>
 		`;
 		lowstockAlerts.appendChild(div);
@@ -199,21 +237,113 @@
 		}
 
 		resetProductForm();
-		await loadProducts();
-		await loadLowStock();
+		await Promise.all([
+			loadProducts(),
+			loadLowStock(),
+			renderMovementSelect()
+		]);
+		iziToast.success({
+			title: 'Sucesso',
+			message: `Produto ${p.id ? 'atualizado' : 'criado'} corretamente!`,
+			position: 'topRight'
+		});
+
 	});
+
+	let chart;
+	async function loadChart() {
+		const start = document.getElementById("chart-start").value;
+		const end   = document.getElementById("chart-end").value;
+		const type  = document.getElementById("chart-type").value;
+
+		const items = await window.api.getMovementsFiltered({ start, end, type });
+		iziToast.info({
+			title: 'Informação',
+			message: `Grafico atualizado com ${items.length} registros.`,
+			position: 'topRight'
+		});
+		const totals = {};
+		for (const m of items) {
+			const name = m.product_name;
+			const total = m.quantity * (m.price_per_unit ?? 0);
+
+			totals[name] = (totals[name] || 0) + total;
+		}
+
+		const labels = Object.keys(totals);
+		const values = Object.values(totals);
+
+		if (chart) chart.destroy();
+
+		const ctx = document.getElementById("myChart").getContext("2d");
+
+		chart = new Chart(ctx, {
+			type: "bar",
+			data: {
+				labels,
+				datasets: [{
+					label: `Total (${type})`,
+					data: values
+				}]
+			}
+		});
+	}
+
+	document.getElementById("btn-load-chart").addEventListener("click", loadChart);
+
+
+	// cargar con filtro
+	// async function loadChartFiltered() {
+	// 	const start = document.getElementById("chart-start").value;
+	// 	const end = document.getElementById("chart-end").value;
+
+	// 	if (!start || !end) {
+	// 		toast.error("Selecione uma data inicial e final");
+	// 		return;
+	// 	}
+
+	// 	const data = await window.api.getGastosPorPeriodo(start, end);
+
+	// 	const labels = data.map(r => new Date(r.date).toLocaleDateString());
+	// 	const values = data.map(r => r.total);
+
+	// 	renderGastosChart(labels, values);
+
+	// 	toast.success("Gráfico atualizado!");
+	// }
+
+	// Botón de filtro
+	// document.getElementById("btn-load-chart").onclick = loadChartFiltered;
+
+	// cargar no inicio
+	// loadChartDefault();
 
 	productCancel.addEventListener("click", resetProductForm);
 
 	productDelete.addEventListener("click", async () => {
-		if (!productId.value) return alert("Seleccione un produto.");
-		if (!confirm("Excluir produto?")) return;
+		if (!productId.value) {z
+			iziToast.info({
+				title: 'Info',
+				message: 'Seleccione un produto.',
+				position: 'topRight'
+			});
+
+			return;
+		} 
+		
+		const ok = await showConfirmDelete();
+		if (!ok) {
+			return;
+		}
 
 		await window.api.deleteProduct(Number(productId.value));
 
 		resetProductForm();
-		await loadProducts();
-		await loadLowStock();
+		await Promise.all([
+			loadProducts(),
+			loadLowStock(),
+			renderMovementSelect()
+		]);
 	});
 
 	function resetProductForm() {
@@ -228,15 +358,22 @@
 	movementForm.addEventListener("submit", async (e) => {
 		e.preventDefault();
 		const m = {
-			product_id: Number(movementProduct.value),
+			product_id: Number(movementProductSelect.value),
 			type: $("#movement-type").value,
 			price_per_unit: parseFloat($("#movement-price").value) || 0,
 			quantity: Number($("#movement-quantity").value),
 			note: $("#movement-note").value.trim(),
 		};
 
-		if (!m.product_id || !m.quantity)
-			return alert("Seleccione producto y cantidad válida.");
+		if (!m.product_id || !m.quantity) {
+			iziToast.info({
+				title: 'Info',
+				message: 'Seleccione o produto e quantidade.',
+				position: 'topRight'
+			});
+			return;
+
+		}
 
 		await window.api.addMovement(m);
 
@@ -247,22 +384,44 @@
 		await loadProducts();
 		await loadMovements();
 		await loadLowStock();
+		await renderMovementSelect();
+
+		iziToast.success({
+			title: 'Sucesso',
+			message: 'Movimento adicionado corretamente!',
+			position: 'topRight'
+		});
 	});
 
 	btnRefresh.addEventListener("click", async () => {
-		await loadProducts();
-		await loadMovements();
-		await loadLowStock();
+		await Promise.all([
+			loadProducts(),
+			loadLowStock(),
+			loadMovements(),
+			renderMovementSelect(),
+		]);
 	});
 
 	btnCSV.addEventListener("click", async () => {
 		const result = await window.api.exportCSV();
-		if (result.ok) alert("CSV exportado corretamente!");
+		if (result.ok) {
+			iziToast.success({
+				title: 'Sucesso',
+				message: 'CSV exportado corretamente!',
+				position: 'topRight'
+			});
+		}
 	});
 
 	btnCSVMovement.addEventListener("click", async () => {
 		const result = await window.api.exportCSVMovement();
-		if (result.ok) alert("CSV exportado corretamente!");
+		if (result.ok) {
+			iziToast.success({
+				title: 'Sucesso',
+				message: 'CSV exportado corretamente!',
+				position: 'topRight'
+			});
+		}
 	});
 
 	function debounce(fn, delay = 200) {
@@ -288,7 +447,12 @@
 		debounce(() => loadMovements(), 120)
 	);
 
-	await loadProducts();
-	await loadMovements();
-	await loadLowStock();
+
+	await Promise.all([
+		loadProducts(),
+		loadLowStock(),
+		loadMovements(),
+		renderMovementSelect(),
+	]);
+
 })();

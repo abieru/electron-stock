@@ -115,20 +115,38 @@
 		movementsList.querySelectorAll(".btn-delete-movement").forEach(btn => {
 			btn.onclick = async () => {
 				const id = Number(btn.dataset.id);
-				if (!confirm("Esta ação é irreversível, realmente deseja excluir este movimento?")) {
-						return;
-					}
-					await window.api.deleteMovement(Number(id));
-					await Promise.all([
-						loadProducts(),
-						loadLowStock(),
-						loadMovements(),
-						renderMovementSelect()
-					]);
-				};
+				 const ok = await showConfirmDelete();
+				if (!ok) {
+					return;
+				}
+				await window.api.deleteMovement(Number(id));
+				await Promise.all([
+					loadProducts(),
+					loadLowStock(),
+					loadMovements(),
+					renderMovementSelect()
+				]);
+			};
 		});
 	}
 
+	function showConfirmDelete() {
+		return new Promise(resolve => {
+			const modal = new bootstrap.Modal(document.getElementById("confirmDeleteModal"));
+
+			const btn = document.getElementById("confirmDeleteBtn");
+
+			const cancelHandler = () => resolve(false);
+			const confirmHandler = () => resolve(true);
+
+			document.querySelector("#confirmDeleteModal .btn-secondary")
+				.onclick = cancelHandler;
+
+			btn.onclick = confirmHandler;
+
+			modal.show();
+		});
+	}
 	function renderPagination() {
 		const totalPages = Math.ceil(totalProducts / pageSize);
 
@@ -223,14 +241,31 @@
 			loadLowStock(),
 			renderMovementSelect()
 		]);
+		iziToast.success({
+			title: 'Sucesso',
+			message: `Produto ${p.id ? 'atualizado' : 'criado'} corretamente!`,
+			position: 'topRight'
+		});
 
 	});
 
 	productCancel.addEventListener("click", resetProductForm);
 
 	productDelete.addEventListener("click", async () => {
-		if (!productId.value) return alert("Seleccione un produto.");
-		if (!confirm("Excluir produto?")) return;
+		if (!productId.value) {
+			iziToast.info({
+				title: 'Info',
+				message: 'Seleccione un produto.',
+				position: 'topRight'
+			});
+
+			return;
+		} 
+		
+		const ok = await showConfirmDelete();
+		if (!ok) {
+			return;
+		}
 
 		await window.api.deleteProduct(Number(productId.value));
 
@@ -261,8 +296,15 @@
 			note: $("#movement-note").value.trim(),
 		};
 
-		if (!m.product_id || !m.quantity)
-			return alert("Seleccione o produto e quantidade.");
+		if (!m.product_id || !m.quantity) {
+			iziToast.info({
+				title: 'Info',
+				message: 'Seleccione o produto e quantidade.',
+				position: 'topRight'
+			});
+			return;
+
+		}
 
 		await window.api.addMovement(m);
 
@@ -274,6 +316,12 @@
 		await loadMovements();
 		await loadLowStock();
 		await renderMovementSelect();
+
+		iziToast.success({
+			title: 'Sucesso',
+			message: 'Movimento adicionado corretamente!',
+			position: 'topRight'
+		});
 	});
 
 	btnRefresh.addEventListener("click", async () => {
@@ -287,12 +335,24 @@
 
 	btnCSV.addEventListener("click", async () => {
 		const result = await window.api.exportCSV();
-		if (result.ok) alert("CSV exportado corretamente!");
+		if (result.ok) {
+			iziToast.success({
+				title: 'Sucesso',
+				message: 'CSV exportado corretamente!',
+				position: 'topRight'
+			});
+		}
 	});
 
 	btnCSVMovement.addEventListener("click", async () => {
 		const result = await window.api.exportCSVMovement();
-		if (result.ok) alert("CSV exportado corretamente!");
+		if (result.ok) {
+			iziToast.success({
+				title: 'Sucesso',
+				message: 'CSV exportado corretamente!',
+				position: 'topRight'
+			});
+		}
 	});
 
 	function debounce(fn, delay = 200) {

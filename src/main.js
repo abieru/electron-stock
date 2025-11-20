@@ -1,9 +1,14 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
-const DB = require('./db');
+const DB = require('./dao/db');
+const ProductsDAO = require('./dao/products.db');
+const MovementsDAO = require('./dao/movements.db');
 const fs = require("fs");
 
 const db = new DB(path.join(app.getPath('userData'), 'inventario.db'));
+db.init();
+const DAOproducts = new ProductsDAO(db.db);
+const DAOmovements = new MovementsDAO(db.db);
 
 let mainWindow;
 
@@ -27,7 +32,6 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-	db.init();
 	createWindow();
 });
 
@@ -37,7 +41,7 @@ app.on('window-all-closed', () => {
 
 
 ipcMain.handle("exportCSV", async () => {
-	const items = db.getAllProductsForCSV();
+	const items = DAOproducts.getAllProductsForCSV();
 
 	const headers = ["id", "nome", "quantidade", "quantidade_minima", "fornecedor", "localizacao"];
 	const csvRows = [];
@@ -63,7 +67,7 @@ ipcMain.handle("exportCSV", async () => {
 });
 
 ipcMain.handle("exportCSVMovement", async () => {
-	const items = db.getAllMovementsForCSV();
+	const items = DAOmovements.getAllMovementsForCSV();
 
 	const headers = ["id", "produto", "tipo", "quantidade", "data", "descricao"];
 	const csvRows = [];
@@ -100,20 +104,18 @@ function safeHandle(channel, handler) {
 	});
 }
 
-
-safeHandle('createProduct', product => db.createProduct(product));
-safeHandle('updateProduct', product => db.updateProduct(product));
-safeHandle('deleteProduct', id => db.deleteProduct(id));
-safeHandle('deleteMovement', id => db.deleteMovement(id));
-safeHandle('lowStock', () => db.getLowStock());
-safeHandle('searchProducts', text => db.searchProducts(text));
+safeHandle('createProduct', product => DAOproducts.createProduct(product));
+safeHandle('updateProduct', product => DAOproducts.updateProduct(product));
+safeHandle('deleteProduct', id => DAOproducts.deleteProduct(id));
 safeHandle('getProductsPaged', (search, page, pageSize) => {
-	return db.getProductsPaged(search, page, pageSize);
+	return DAOproducts.getProductsPaged(search, page, pageSize);
 });
-safeHandle('addMovement', movement => db.addMovement(movement));
+safeHandle('getProductsLazy', () => DAOproducts.getProductsLazy());
+safeHandle('lowStock', () => DAOproducts.getLowStock());
+safeHandle('deleteMovement', id => DAOmovements.deleteMovement(id));
+safeHandle('addMovement', movement => DAOmovements.addMovement(movement));
 safeHandle('getMovementPaged', (search, date, page, pageSize) => {
-	return db.getMovementPaged(search, date, page, pageSize)
+	return DAOmovements.getMovementPaged(search, date, page, pageSize)
 });
-safeHandle('getProductsLazy', () => db.getProductsLazy());
-safeHandle('getMovementsFiltered', filter => db.getMovementsFiltered(filter));
+safeHandle('getMovementsFiltered', filter => DAOmovements.getMovementsFiltered(filter));
 

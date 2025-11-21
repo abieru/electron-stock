@@ -4,43 +4,43 @@ class MovementsDAO {
 		this.db = database;
 	}
 
-	getMovementPaged(search, date, page, pageSize) {
+	getPaged(search, date, page, pageSize = 5) {
 		const offset = (page - 1) * pageSize;
 
 		let query = `SELECT m.*, p.name AS product_name FROM movements m LEFT JOIN products p ON p.id = m.product_id`;
 		let params = [];
 		if (search || date) {
-			query += ` WHERE`;
+			query += ` WHERE 1=1 `;
 		}
 		if (search) {
-			query += ` m.type LIKE ? OR m.note LIKE ? OR p.name LIKE ? OR m.price_per_unit LIKE ?`;
+			query += ` AND (m.type LIKE ? OR m.note LIKE ? OR p.name LIKE ? OR m.price_per_unit LIKE ?)`;
 			params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
 		}
 		if (date) {
-			query += ` m.date LIKE ?`;
+			query += ` AND m.date LIKE ?`;
 			params.push(`%${date}%`);
 		}
 
 
-		const totalQuery = `SELECT COUNT(*) AS count FROM (${query})`;
+		const totalQuery = `SELECT COUNT(*) AS count FROM (${query})  AS tmp`;
 		const totalResult = this.db.prepare(totalQuery).get(params);
 		const totalItems = totalResult.count;
 
-		const order = ` ORDER BY date DESC `;
+		const order = ` ORDER BY m.date DESC `;
 		const pagedQuery = query + order + ` LIMIT ? OFFSET ?`;
-		const pagedItems = this.db
+		const items = this.db
 			.prepare(pagedQuery)
-			.all(...params, pageSize, offset);
+			.all([...params, pageSize, offset]);
 
 		return {
-			items: pagedItems,
+			items,
 			page,
 			totalItems,
 			totalPages: Math.ceil(totalItems / pageSize)
 		};
 	}
 
-	addMovement(m) {
+	add(m) {
 		const date = new Date().toISOString();
 
 		const tx = this.db.transaction((data) => {
@@ -62,7 +62,7 @@ class MovementsDAO {
 		return { ok: true };
 	}
 
-	getAllMovementsForCSV() {
+	getAllForCSV() {
 		return this.db.prepare(`
 			SELECT 
 				m.id, 
@@ -75,7 +75,7 @@ class MovementsDAO {
 		`).all();
 	}
 
-	getMovementsFiltered(filters) {
+	getFiltered(filters) {
 		const { start, end, type } = filters;
 		const query = `
 			SELECT m.*, p.name AS product_name 
@@ -88,7 +88,7 @@ class MovementsDAO {
 		return this.db.prepare(query).all(start, end, type);
 	}
 
-	deleteMovement(id) {
+	delete(id) {
 		const tx = this.db.transaction(id => {
 			let movementToDelete = this.db.prepare(`select * FROM movements WHERE id = ?`).get(id);
 			let sumOrSub = movementToDelete.type == "ENTRADA" ? '-' : '+';

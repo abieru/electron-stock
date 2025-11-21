@@ -4,7 +4,7 @@ class ProductsDAO {
 		this.db = database;
 	}
 
-	getProductsPaged(search, page, pageSize) {
+	getPaged(search, page, pageSize) {
 		const offset = (page - 1) * pageSize;
 
 		let query = `SELECT * FROM products `;
@@ -21,24 +21,24 @@ class ProductsDAO {
 
 		const pagedQuery = query + `ORDER BY UPPER(name) ASC  LIMIT ? OFFSET ?`;
 
-		const pagedItems = this.db
+		const items = this.db
 			.prepare(pagedQuery)
 			.all(...params, pageSize, offset);
 
 		return {
-			items: pagedItems,
+			items,
 			page,
 			totalItems,
 			totalPages: Math.ceil(totalItems / pageSize)
 		};
 	}
 
-	getProductsLazy() {
+	getLazy() {
 		const items = this.db.prepare(`SELECT name, quantity, id FROM products ORDER BY id`).all();
 		return { items };
 	}
 
-	createProduct(p) {
+	create(p) {
 		const info = this.db.prepare(`
             INSERT INTO products (name, quantity, min_quantity, category, location)
             VALUES (@name, @quantity, @min_quantity, @category, @location)
@@ -46,7 +46,7 @@ class ProductsDAO {
 		return { id: info.lastInsertRowid };
 	}
 
-	updateProduct(p) {
+	update(p) {
 		this.db.prepare(`
             UPDATE products
             SET name=@name, quantity=@quantity, min_quantity=@min_quantity,
@@ -56,7 +56,7 @@ class ProductsDAO {
 		return { ok: true };
 	}
 
-	deleteProduct(id) {
+	delete(id) {
 		const tx = this.db.transaction((id) => {
 			this.db.prepare(`DELETE FROM movements WHERE product_id = ?`).run(id);
 			this.db.prepare(`DELETE FROM products WHERE id = ?`).run(id);
@@ -67,7 +67,7 @@ class ProductsDAO {
 	}
 
 
-	getAllProductsForCSV() {
+	getAllForCSV() {
 		return this.db.prepare(`
             SELECT id, name as nome, quantity as quantidade, min_quantity as quantidade_minima, category as fornecedor, location as localizacao
             FROM products

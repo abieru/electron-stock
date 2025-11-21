@@ -125,7 +125,6 @@
 					loadLowStock(),
 					loadMovements(),
 					renderMovementSelect(),
-					// renderGraficoGastos()
 				]);
 			};
 		});
@@ -291,37 +290,10 @@
 
 	document.getElementById("btn-load-chart").addEventListener("click", loadChart);
 
-
-	// cargar con filtro
-	// async function loadChartFiltered() {
-	// 	const start = document.getElementById("chart-start").value;
-	// 	const end = document.getElementById("chart-end").value;
-
-	// 	if (!start || !end) {
-	// 		toast.error("Selecione uma data inicial e final");
-	// 		return;
-	// 	}
-
-	// 	const data = await window.api.getGastosPorPeriodo(start, end);
-
-	// 	const labels = data.map(r => new Date(r.date).toLocaleDateString());
-	// 	const values = data.map(r => r.total);
-
-	// 	renderGastosChart(labels, values);
-
-	// 	toast.success("Gráfico atualizado!");
-	// }
-
-	// Botón de filtro
-	// document.getElementById("btn-load-chart").onclick = loadChartFiltered;
-
-	// cargar no inicio
-	// loadChartDefault();
-
 	productCancel.addEventListener("click", resetProductForm);
 
 	productDelete.addEventListener("click", async () => {
-		if (!productId.value) {z
+		if (!productId.value) {
 			iziToast.info({
 				title: 'Info',
 				message: 'Seleccione un produto.',

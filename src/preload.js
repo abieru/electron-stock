@@ -1,19 +1,17 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
-	getProducts: () => ipcRenderer.invoke('getProducts'),
-	getProductsPaged: (search, page, pageSize) => ipcRenderer.invoke('getProductsPaged', search, page, pageSize),
-	getMovementPaged: (search, date, page, pageSize) => ipcRenderer.invoke('getMovementPaged', search, date, page, pageSize),
-	createProduct: (p) => ipcRenderer.invoke('createProduct', p),
-	updateProduct: (p) => ipcRenderer.invoke('updateProduct', p),
-	deleteProduct: (id) => ipcRenderer.invoke('deleteProduct', id),
-	deleteMovement: (id) => ipcRenderer.invoke('deleteMovement', id),
-	addMovement: (m) => ipcRenderer.invoke('addMovement', m),
-	lowStock: () => ipcRenderer.invoke('lowStock'),
-	exportCSV: () => ipcRenderer.invoke("exportCSV"),
-	exportCSVMovement: () => ipcRenderer.invoke("exportCSVMovement"),
-	searchProducts: (text) => ipcRenderer.invoke('searchProducts', text),
-	getProductsLazy: () => ipcRenderer.invoke('getProductsLazy'),
-	getMovementsFiltered: (filter) => ipcRenderer.invoke("getMovementsFiltered", filter)
+	getProductsPaged: (search, page, pageSize) => ipcRenderer.invoke('products:getPaged', search, page, pageSize),
+	createProduct: (p) => ipcRenderer.invoke('products:create', p),
+	updateProduct: (p) => ipcRenderer.invoke('products:update', p),
+	deleteProduct: (id) => ipcRenderer.invoke('products:delete', id),
+	lowStock: () => ipcRenderer.invoke('products:lowStock'),
+	exportCSV: () => ipcRenderer.invoke("products:exportCSV"),
+	getProductsLazy: () => ipcRenderer.invoke('products:getLazy'),
+	deleteMovement: (id) => ipcRenderer.invoke('movements:delete', id),
+	getMovementPaged: (search, date, page, pageSize) => ipcRenderer.invoke('movements:getPaged', search, date, page, pageSize),
+	addMovement: (m) => ipcRenderer.invoke('movements:add', m),
+	exportCSVMovement: () => ipcRenderer.invoke("movements:exportCSV"),
+	getMovementsFiltered: filter => ipcRenderer.invoke("movements:getFiltered", filter)
 
 });

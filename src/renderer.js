@@ -12,6 +12,7 @@
 	const productDelete = $('#product-delete');
 	const productsTableBody = $('#products-table tbody');
 	const movementProductSelect = $('#movement-product');
+	const movementSelectList = document.getElementById("movement-result");
 	const movementForm = $('#movement-form');
 	const movementsList = $('#movements-list');
 	const lowstockAlerts = $('#lowstock-alerts');
@@ -124,7 +125,6 @@
 					loadProducts(),
 					loadLowStock(),
 					loadMovements(),
-					renderMovementSelect(),
 				]);
 			};
 		});
@@ -183,11 +183,10 @@
 		if (currentPageMovement < totalPages) loadMovements(currentPageMovement + 1);
 	});
 
-	async function renderMovementSelect() {
-		const { items } = await window.api.getProductsLazy();
+	async function renderMovementSelect(search = "") {
+		const { items } = await window.api.getProductsLazy(search);
 		
 		const frag = document.createDocumentFragment();
-
 		for (const p of items) {
 			const opt = document.createElement("option");
 			opt.value = p.id;
@@ -239,7 +238,6 @@
 		await Promise.all([
 			loadProducts(),
 			loadLowStock(),
-			renderMovementSelect()
 		]);
 		iziToast.success({
 			title: 'Sucesso',
@@ -261,18 +259,23 @@
 			message: `Grafico atualizado com ${items.length} registros.`,
 			position: 'topRight'
 		});
+
 		const totals = {};
 		for (const m of items) {
 			const name = m.product_name;
 			const total = m.quantity * (m.price_per_unit ?? 0);
 
-			totals[name] = (totals[name] || 0) + total;
+			if (total > 0) {
+				totals[name] = (totals[name] || 0) + total;
+			} 
+
 		}
 
 		const labels = Object.keys(totals);
 		const values = Object.values(totals);
-
-		if (chart) chart.destroy();
+		if (chart) {
+			chart.destroy();
+		} 
 
 		const ctx = document.getElementById("myChart").getContext("2d");
 
@@ -288,7 +291,19 @@
 		});
 	}
 
+	async function clearChart() { 
+		iziToast.info({
+			title: 'Informação',
+			message: `Grafico limpado.`,
+			position: 'topRight'
+		});
+		if (chart) {
+			chart.destroy();
+		}  
+	}
+
 	document.getElementById("btn-load-chart").addEventListener("click", loadChart);
+	document.getElementById("btn-clear-chart").addEventListener("click", clearChart);
 
 	productCancel.addEventListener("click", resetProductForm);
 
@@ -314,7 +329,6 @@
 		await Promise.all([
 			loadProducts(),
 			loadLowStock(),
-			renderMovementSelect()
 		]);
 	});
 
@@ -330,7 +344,7 @@
 	movementForm.addEventListener("submit", async (e) => {
 		e.preventDefault();
 		const m = {
-			product_id: Number(movementProductSelect.value),
+			product_id: Number(movementProductSelect.dataset.productId),
 			type: $("#movement-type").value,
 			price_per_unit: parseFloat($("#movement-price").value) || 0,
 			quantity: Number($("#movement-quantity").value),
@@ -356,7 +370,6 @@
 		await loadProducts();
 		await loadMovements();
 		await loadLowStock();
-		await renderMovementSelect();
 
 		iziToast.success({
 			title: 'Sucesso',
@@ -370,7 +383,6 @@
 			loadProducts(),
 			loadLowStock(),
 			loadMovements(),
-			renderMovementSelect(),
 		]);
 	});
 
@@ -419,12 +431,58 @@
 		debounce(() => loadMovements(), 120)
 	);
 
+	movementProductSelect.addEventListener("input", debounce(async (e) => {
+		if (movementProductSelect?.dataset?.productId) {
+			movementProductSelect.value = "";
+			delete movementProductSelect.dataset.productId;
+		}
+		const search = e.target.value.trim();
+		const { items } = await window.api.getProductsLazy(search);
+
+		movementSelectList.innerHTML = "";
+
+		if (items.length === 0) {
+			movementSelectList.style.display = "none";
+			return;
+		}
+
+		for (const p of items) {
+			const li = document.createElement("li");
+			li.classList.add(
+				"list-group-item", 
+				"list-group-item-action", 
+				"d-flex", 
+				"justify-content-between"
+			);
+
+			li.innerHTML = `
+				<span>${p.name}</span>
+				<span class="text-muted">(${p.quantity})</span>
+			`;
+
+			li.addEventListener("click", () => {
+				movementProductSelect.value = p.name; 
+				movementProductSelect.dataset.productId = p.id;
+				movementSelectList.style.display = "none";
+			});
+
+			movementSelectList.appendChild(li);
+		}
+
+		movementSelectList.style.display = "block";
+	}, 150));
+
+	document.addEventListener("click", (e) => {
+		if (!movementProductSelect.contains(e.target) && !movementSelectList.contains(e.target)) {
+			movementSelectList.style.display = "none";
+		}
+	});
+
 
 	await Promise.all([
 		loadProducts(),
 		loadLowStock(),
 		loadMovements(),
-		renderMovementSelect(),
 	]);
 
 })();

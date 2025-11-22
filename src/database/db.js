@@ -4,7 +4,7 @@ const { app } = require("electron");
 
 class DB {
     constructor() {
-        const file = path.join(app.getPath("userData"), "inventario.db");
+        const file = path.join(app.getPath("userData"), "inventario2.db");
 
         this.db = new Database(file);
 

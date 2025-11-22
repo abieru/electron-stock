@@ -33,8 +33,15 @@ class ProductsDAO {
 		};
 	}
 
-	getLazy() {
-		const items = this.db.prepare(`SELECT name, quantity, id FROM products ORDER BY id`).all();
+	getLazy(search) {
+		let params = [];
+		let query = `SELECT name, quantity, id FROM products `;
+		if (search && search?.trim() !== "") {
+			query += `WHERE name LIKE ? OR category LIKE ? `;
+			params.push(`%${search}%`, `%${search}%`);
+		}
+		query += `ORDER BY id `;
+		const items = this.db.prepare(query).all(params);
 		return { items };
 	}
 

@@ -89,9 +89,21 @@
 
 						<form id="movement-form" class="row g-2 align-items-end">
 
-							<div class="col-6">
-								<label class="form-label">Produto</label>
-								<select id="movement-product" class="form-select"></select>
+							<div class="col-4">
+									<label for="movement-product" class="form-label">Produto</label>
+									
+									<input type="text" 
+										id="movement-product" 
+										class="form-control" 
+										placeholder="Buscar produto..." 
+										autocomplete="off">
+
+									<ul id="movement-result" 
+										class="list-group position-absolute w-100" 
+										style="z-index: 1000; display:none; max-height: 220px; overflow-y: auto;">
+									</ul>
+				
+								
 							</div>
 
 							<div class="col-3">
@@ -152,8 +164,9 @@
 								</select>
 							</div>
 
-							<div class="col-auto d-flex align-items-end">
+							<div class="col-auto d-flex gap-2 align-items-end">
 								<button id="btn-load-chart" class="btn btn-primary">Gerar gráfico</button>
+								<button id="btn-clear-chart" class="btn btn-secondary">limpar gráfico</button>
 							</div>
 
 						</div>

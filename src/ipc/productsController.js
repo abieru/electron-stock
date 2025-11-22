@@ -47,7 +47,8 @@ function registerProductsController(service) {
 	safeHandle('products:getPaged', (search, page, pageSize) => {
 		return service.getPaged(search, page, pageSize);
 	});
-	safeHandle('products:getLazy', () => service.getLazy());
+	safeHandle('products:getLazy', search => 
+		service.getLazy(search));
 	safeHandle('products:lowStock', () => service.getLowStock());
 	
 }

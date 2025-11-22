@@ -7,7 +7,7 @@ contextBridge.exposeInMainWorld('api', {
 	deleteProduct: (id) => ipcRenderer.invoke('products:delete', id),
 	lowStock: () => ipcRenderer.invoke('products:lowStock'),
 	exportCSV: () => ipcRenderer.invoke("products:exportCSV"),
-	getProductsLazy: () => ipcRenderer.invoke('products:getLazy'),
+	getProductsLazy: (search) => ipcRenderer.invoke('products:getLazy', search),
 	deleteMovement: (id) => ipcRenderer.invoke('movements:delete', id),
 	getMovementPaged: (search, date, page, pageSize) => ipcRenderer.invoke('movements:getPaged', search, date, page, pageSize),
 	addMovement: (m) => ipcRenderer.invoke('movements:add', m),

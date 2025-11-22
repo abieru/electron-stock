@@ -7,8 +7,8 @@ class ProductsService {
 		return this.dao.getPaged(search, page, pageSize);
 	}
 
-	getLazy() {
-		return this.dao.getLazy();
+	getLazy(search) {
+		return this.dao.getLazy(search);
 	}
 
 	create(p) {

@@ -261,34 +261,67 @@
 		});
 
 		const totals = {};
+		let totalprice = 0;
+		let totalquantity = 0;
 		for (const m of items) {
-			const name = m.product_name;
 			const total = m.quantity * (m.price_per_unit ?? 0);
-
+			let quantidadeTotal = items.filter(mo => mo.product_id === m.product_id).map(mo => mo.quantity).reduce((a,b) => a + b);
+			const name = m.product_name + ` Qtde: ${quantidadeTotal}`;
 			if (total > 0) {
 				totals[name] = (totals[name] || 0) + total;
+				totalprice += total;
+				totalquantity += m.quantity;
 			} 
 
 		}
 
-		const labels = Object.keys(totals);
+		const labels = Object.keys(totals)
 		const values = Object.values(totals);
+
 		if (chart) {
 			chart.destroy();
 		} 
-
 		const ctx = document.getElementById("myChart").getContext("2d");
-
-		chart = new Chart(ctx, {
-			type: "bar",
+		let borderColor = type !== 'ENTRADA' ? 'rgba(255, 99, 132, 1)' : '';
+		let backgroundColor = type !== 'ENTRADA' ? 'rgba(255, 68, 108, 0.2)' : '';	
+		chart = new Chart(ctx,{
+			type: "bar", 
 			data: {
 				labels,
 				datasets: [{
 					label: `Total (${type})`,
-					data: values
+					data: values,
+					borderColor,
+     				backgroundColor,
 				}]
+			},
+			options: {
+				plugins: {
+					tooltip: {
+						callbacks: {
+							label: function(context) {
+								let value = context.raw || 0;
+								return  `Total (${type}): R$ ` + value.toFixed(2).replace('.', ',');
+							}
+						}
+					},
+					title: {
+						display: true,
+						text: `Total de R$ ${totalprice.toFixed(2)} (${type}), em ${totalquantity} produtos.`,
+						align: 'start'
+					},
+				},
+				scales: {
+					x: {
+						ticks: {
+							display: false
+						}
+					}
+				}
 			}
 		});
+		const labelsDiv = document.getElementById("chart-labels");
+		labelsDiv.innerHTML = labels.map(l => `<div>• ${l}</div>`).join("");
 	}
 
 	async function clearChart() { 

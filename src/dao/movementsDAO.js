@@ -78,11 +78,11 @@ class MovementsDAO {
 	getFiltered(filters) {
 		const { start, end, type } = filters;
 		const query = `
-			SELECT m.*, p.name AS product_name 
+			SELECT m.*, p.name AS product_name
 			FROM movements m left JOIN products p ON p.id = m.product_id 
 			WHERE m.price_per_unit IS NOT NULL AND
 			m.date BETWEEN ? AND ?
-			AND m.type = ?
+			AND m.type = ? and m.price_per_unit > 0
 		`;
 
 		return this.db.prepare(query).all(start, end, type);
